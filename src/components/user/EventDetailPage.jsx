@@ -94,46 +94,10 @@ export default function EventDetailPage() {
     } catch (err) {
       console.error("Error fetching event details:", err);
       setError("Failed to load event details. Please try again later.");
-
-      // Fallback to mock data
-      const mockEvents = getMockEventsData();
-      setEvent(mockEvents[id] || mockEvents[1]);
     } finally {
       setLoading(false);
     }
   };
-
-  const getMockEventsData = () => ({
-    1: {
-      _id: 1,
-      coverImage:
-        "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200&h=800&fit=crop&crop=entropy&auto=format",
-      title: "Goa Sunset Beach Festival",
-      description:
-        "An unforgettable evening of music, dance, and coastal beauty.",
-      shortDescription:
-        "Experience the ultimate dance and local theme park party with vibrant live music.",
-      date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      location: "Goa, India",
-      about:
-        "The Goa Sunset Beach Festival blends the magic of golden sunsets with the energy of live music, vibrant beachside performances, and mouthwatering coastal delicacies.",
-      price: 3500,
-      category: "Festival",
-      capacity: 200,
-      bookedSeats: 75,
-      scheduleItems: [
-        { time: "5:00 PM", activity: "Gate opens & Welcome Drinks" },
-        { time: "6:00 PM", activity: "Live Music Performance" },
-        { time: "7:00 PM", activity: "Sunset Viewing & Photography" },
-        { time: "8:00 PM", activity: "Beach Bonfire & Dinner" },
-      ],
-      includedItems: [
-        { description: "Live performances by local and international artists" },
-        { description: "Sunset viewing experience from the beach" },
-        { description: "Fire dance performances and cultural showcases" },
-      ],
-    },
-  });
 
   const getImageUrl = (image, category) => {
     if (image) return image;
@@ -311,7 +275,7 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 mt-22">
+    <div className="min-h-screen bg-[#f0f2d9] pt-16">
       {/* Hero Section */}
       <div
         className="relative h-64 sm:h-80 lg:h-96 xl:h-[500px] flex items-center justify-center bg-cover bg-center bg-no-repeat"
@@ -322,8 +286,8 @@ export default function EventDetailPage() {
           )}')`,
         }}
       >
-        {/* Back button */}
-        {/* <button
+        {/* Back button  */}
+        <button
           onClick={handleBack}
           className="absolute top-4 left-4 sm:top-6 sm:left-6 text-white hover:text-gray-300 transition-colors z-10"
         >
@@ -340,7 +304,7 @@ export default function EventDetailPage() {
               d="M15 19l-7-7 7-7"
             />
           </svg>
-        </button> */}
+        </button>
 
         {/* Hero Content */}
         <div className="relative text-center text-white px-4 sm:px-6 max-w-4xl z-10">
@@ -904,7 +868,7 @@ export default function EventDetailPage() {
         {/* Event Schedule */}
 
         {cartEvents && cartEvents.length > 0 && (
-          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm">
+          <div className="bg-[#f0f2d9] rounded-lg p-4 sm:p-6 shadow-sm">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">
               Event Schedule
             </h2>

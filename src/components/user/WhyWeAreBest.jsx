@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function WhyWeAreBest() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 lg:py-20">
+    <div className="min-h-screen bg-[#eff5d2] py-12 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Column - Content */}

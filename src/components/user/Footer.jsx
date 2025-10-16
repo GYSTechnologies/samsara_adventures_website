@@ -5,7 +5,7 @@ import { Instagram, Phone, Facebook } from 'lucide-react';
 
 const Footer = () => {
   return (
-   <div className="min-h-screen px-4 sm:px-6 lg:px-8">
+   <div className="min-h-screen bg-[#eff5d2] px-4 sm:px-6 lg:px-8">
 
       {/* Hero Section */}
       <div 

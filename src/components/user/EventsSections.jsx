@@ -30,11 +30,7 @@ export default function EventsSections() {
       const events = response.data.events;
 
       if (events && events.length > 0) {
-        // Filter popular events based on bookedSeats
-        // const popular = events.filter(event => event.bookedSeats > 0);
-        // setPopularEvents(popular.slice(0, 8));
         setPopularEvents(events.slice(0, 8));
-
       }
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -48,8 +44,7 @@ export default function EventsSections() {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-IN', {
       day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+      month: 'short'
     });
   };
 
@@ -65,101 +60,48 @@ export default function EventsSections() {
     navigate(`/event-detail/${eventId}`);
   };
 
-  const handleBookNow = (eventId) => {
-    navigate(`/event-detail/${eventId}`);
-  };
+
 
   const EventCard = ({ event, isMobile = false }) => {
     const eventDate = formatDate(event.date);
-    const eventTime = formatTime(event.date);
     
     return (
       <div
-        className={`group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 bg-white ${
-          isMobile ? "min-w-[280px] mx-2" : "flex-none w-84"
+        className={`group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
+          isMobile ? "min-w-[280px] mx-1 h-64" : "flex-none w-70 h-64"
         }`}
+        onClick={() => handleViewDetails(event._id || event.id)}
       >
-        {/* Image Section */}
-        <div className="relative overflow-hidden">
-          <img
-            src={event.coverImage || event.image}
-            alt={event.title}
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          <div className="absolute top-4 left-4">
-            <span className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-gray-700">
-              {event.category}
-            </span>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+        {/* Background Image */}
+        <img
+          src={event.coverImage || event.image}
+          alt={event.title}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+
+        {/* Date Badge - Bottom Left */}
+        <div className="absolute top-4 left-4 bg-black/50 rounded-full text-white px-3 py-1  text-sm font-medium z-10">
+          {eventDate}
         </div>
 
-        {/* Content Section */}
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-3 leading-tight line-clamp-2">
+        {/* Price Badge - Top Left */}
+        {event.price && (
+          <div className="absolute bottom-4 right-4  bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium z-10">
+            Rs.{event.price.toLocaleString()}
+          </div>
+        )}
+
+        {/* Content Overlay - Bottom */}
+        <div className="absolute inset-0 p-4 flex flex-col justify-end text-white z-10">
+          <h3 className="text-xl font-bold mb-1 leading-tight line-clamp-2">
             {event.title}
           </h3>
-          
-          <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-2">
-            {event.shortDescription || event.description}
+          <p className="text-gray-200 text-sm leading-relaxed line-clamp-1">
+            {event.location}
           </p>
-
-          {/* Event Details */}
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center text-sm text-gray-500">
-              <svg
-                className="w-4 h-4 mr-2 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              {eventDate} | {eventTime}
-            </div>
-
-            <div className="flex items-center text-sm text-gray-500">
-              <svg
-                className="w-4 h-4 mr-2 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span className="line-clamp-1">{event.location}</span>
-            </div>
-          </div>
-
-          {/* Price and Button */}
-          <div className="flex items-center justify-between">
-            <div className="text-lg font-bold text-gray-600">
-              ₹{event.price}/person
-            </div>
-
-            <button 
-              onClick={() => handleBookNow(event._id || event.id)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
-            >
-              BOOK NOW
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -193,12 +135,12 @@ export default function EventsSections() {
   }
 
   return (
-    <div className="bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
+    <div className="bg-[#eff5d2] ">
+      <div className="container mx-auto px-1">
         
         {/* Popular Events Section */}
         <section>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 pb-8">
             Popular Events
           </h2>
 

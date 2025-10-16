@@ -5,7 +5,7 @@ import TeamStatsSection from '../../components/user/TeamStatsSection';
 
 export default function TravelAboutSection() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#eff5d2]">
       {/* Hero Section with Background Image */}
       <div 
         className="relative h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
@@ -72,7 +72,7 @@ export default function TravelAboutSection() {
       </div>
 
       {/* Additional Features Section */}
-      <div className="bg-white py-16 lg:py-20">
+      <div className="bg-[#eff5d2] py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center group hover:transform hover:scale-105 transition-transform duration-300">

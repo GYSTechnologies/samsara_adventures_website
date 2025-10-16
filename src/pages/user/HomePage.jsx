@@ -7,18 +7,31 @@ import VacationLanding from '../../components/user/VacationLanding'
 import PhotoGallery from '../../components/user/PhotoGallery'
 import TestimonialCarousel from '../../components/user/TestimonialCarousel'
 import EventsSections from '../../components/user/EventsSections'
+import Recommendations from './Recommendations'
+import Category from './Home/Category'
+import VectorStates from './Home/VectorStates'
+import TopDestinationsCarousel from './Home/TopDestinationsCarousel'
+import StateTripsCarousel from './Home/StateTripsCarousel'
+import StateRecommendations from './Home/StateRecommendations'
 
 const HomePage = () => {
   return (
-    <div>
+    <div className='mb-16'>
 
       <ImageSlider/>
-      <DestinationsCarts/>
+      <Category/>
+      <TopDestinationsCarousel/>
+      <VectorStates/>
+      <StateRecommendations/>
+      <Recommendations/>
+      <StateTripsCarousel/>
+      {/* <DestinationsCarts/> */}
       <EventsSections/>
-      <AdventureCart/>
+
+      {/* <AdventureCart/>
       <VacationLanding/>
       <PhotoGallery/>
-      <TestimonialCarousel/>
+      <TestimonialCarousel/> */}
     </div>
   )
 }

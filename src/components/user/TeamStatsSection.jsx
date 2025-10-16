@@ -11,7 +11,7 @@ export default function TeamStatsSection() {
   ];
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-[#eff5d2] pb-10">
       {/* Stats Section with Background */}
       <div
         className="relative bg-cover bg-center bg-no-repeat py-16 lg:py-24"
@@ -34,10 +34,9 @@ export default function TeamStatsSection() {
         </div>
       </div>
 
-      {/* Team Section */}
-      <div className="py-16 lg:py-20 bg-white">
+      {/* Team Section
+      <div className="py-16 lg:py-20 bg-[#eff5d2]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
           <div className="text-center mb-12">
             <div className="mb-4">
               <span className="text-blue-500 font-medium text-sm uppercase tracking-wide">
@@ -50,7 +49,6 @@ export default function TeamStatsSection() {
             </h2>
           </div>
 
-          {/* Team Members */}
           <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
             {[
               {
@@ -92,8 +90,8 @@ export default function TeamStatsSection() {
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </div> 
+      </div> */}
     </div>
   );
 }

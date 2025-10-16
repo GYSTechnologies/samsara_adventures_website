@@ -31,7 +31,7 @@ const Counter = ({ target, duration = 2000, suffix = "" }) => {
 
 const AdventureCart = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white font-sans">
+    <div className="min-h-screen bg-[#eff5d2] font-sans">
       <div className="container mx-auto px-4 py-8 lg:py-16">
         {/* Header Section */}
         <div className="text-center mb-12 lg:mb-16">

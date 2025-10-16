@@ -381,7 +381,7 @@ const TestimonialCarousel = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col">
+    <div className="min-h-screen bg-[#eff5d2] flex flex-col">
       <div className="container mx-auto px-4 py-6 lg:py-12 flex-1 flex flex-col">
         {/* Header Section - Compact for laptop */}
         <div className="text-center mb-6 lg:mb-12">

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 const ImageSlider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -9,7 +8,7 @@ const ImageSlider = () => {
       image:
         "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2070&q=80",
       title: "Explore the world with Samsara Adventures",
-      desc: "Discover new destinations and create unforgettable memories with our curated travel experiences.",
+      desc: "Discover new destinations and create unforgettable memories with our travel experiences.",
     },
     // {
     //   image:
@@ -31,7 +30,6 @@ const ImageSlider = () => {
     },
   ];
 
-  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,7 +40,7 @@ const ImageSlider = () => {
   }, [slides.length]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-[400px] overflow-hidden">
       {slides.map((slide, index) => (
         <div
           key={index}
@@ -70,23 +68,23 @@ const ImageSlider = () => {
                 <p className="text-white text-base sm:text-lg md:text-xl mb-6 sm:mb-8 opacity-90 max-w-3xl mx-auto leading-relaxed">
                   {slide.desc}
                 </p>
-                <button
+                {/* <button
                   onClick={() => navigate("/destination/all")}
-                  className="hidden sm:inline-block bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl border-2 border-white/20"
+                  className="hidden sm:inline-block bg-gradient-to-r from-lime-900/80 to-lime-800/80 hover:from-lime-900/80 hover:to-lime-800 text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl border-2 border-white/20"  
                 >
                   Start Planning
-                </button>
+                </button> */}
               </div>
             </div>
 
             {/* Mobile Button */}
             <div className="sm:hidden pb-8">
-              <button
+              {/* <button
                 onClick={() => navigate("/destination/all")}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-600 hover:to-blue-700 text-white py-3 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-xl active:scale-95 border-2 border-white/20"
+                className="w-full bg-gradient-to-r from-lime-900/80 to-lime-800 hover:from-green-900 hover:to-green-700 text-white py-3 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-xl active:scale-95 border-2 border-white/20"
               >
                 Start Planning
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

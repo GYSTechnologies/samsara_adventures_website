@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import axios from "axios";
 import {
   User,
   Calendar,
@@ -17,19 +16,13 @@ import {
   X,
   Check,
   Save,
-  Star,
   Download,
   Share2,
-  Users,
   Loader2,
-  Package,
   Calendar as Event,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import EventHistoryPage from "../../components/user/EventHistory";
-
 import { CancelBookingModal } from "../../components/user/CancelBookingModal";
 // Constants
 const PROFILE_PLACEHOLDER =
@@ -40,7 +33,6 @@ const TRIP_PLACEHOLDER =
 const ProfilePage = () => {
   // State management
   const [currentPage, setCurrentPage] = useState("profile");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -60,8 +52,6 @@ const ProfilePage = () => {
 
   // Trips data
   const [bookings, setBookings] = useState([]);
-  const [cancelledTrips, setCancelledTrips] = useState(new Set());
-  const [showItinerary, setShowItinerary] = useState({});
 
   // Password change
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -206,7 +196,6 @@ const ProfilePage = () => {
     }
   }, []);
 
-  // Password change
   const changePassword = useCallback(async () => {
     try {
       if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -237,35 +226,7 @@ const ProfilePage = () => {
     }
   }, [passwordData]);
 
-  const cancelBooking = useCallback(async (bookingId, reason) => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.put(
-        `/api/users/bookings/${bookingId}/request-cancellation`, // Changed endpoint
-        {
-          reason,
-        }
-      );
 
-      // Cancellation request successful - add to cancellationRequests
-      setCancellationRequests((prev) => new Set(prev).add(bookingId));
-
-      // Show success message with refund details
-      if (response.data.potentialRefund?.eligible) {
-        setSuccess(
-          `Cancellation requested! ₹${response.data.potentialRefund.amount} refund pending admin approval.`
-        );
-      } else {
-        setSuccess(
-          "Cancellation requested! Waiting for admin approval. No refund applicable."
-        );
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to request cancellation");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const downloadItinerary = useCallback(async (bookingId) => {
     try {
@@ -286,42 +247,6 @@ const ProfilePage = () => {
       setError("Failed to download itinerary. Please try again.");
     }
   }, []);
-
-  // Helper functions
-  const formatDate = useCallback((dateString) => {
-    if (!dateString) return "N/A";
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date(dateString).toLocaleDateString("en-US", options);
-  }, []);
-
-  const calculateDaysRemaining = useCallback((startDate) => {
-    if (!startDate) return 0;
-    const tripDate = new Date(startDate);
-    const today = new Date();
-    const timeDiff = tripDate - today;
-    return Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
-  }, []);
-
-  const calculateRefundPercentage = useCallback(
-    (startDate) => {
-      const daysRemaining = calculateDaysRemaining(startDate);
-      if (daysRemaining > 7) return 100;
-      if (daysRemaining > 6) return 75;
-      if (daysRemaining > 5) return 50;
-      if (daysRemaining > 4) return 25;
-      return 0;
-    },
-    [calculateDaysRemaining]
-  );
-
-  const calculateRefundAmount = useCallback(
-    (startDate, totalAmount) => {
-      if (!totalAmount) return 0;
-      const percentage = calculateRefundPercentage(startDate);
-      return Math.round((totalAmount * percentage) / 100);
-    },
-    [calculateRefundPercentage]
-  );
 
   // Effects
   useEffect(() => {
@@ -346,13 +271,13 @@ const ProfilePage = () => {
       onClick={onClick}
       className={`flex items-center space-x-4 p-4 rounded-xl cursor-pointer transition-all duration-200 group ${
         active
-          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-200 scale-105"
+          ? "bg-gradient-to-r from-lime-900 to-lime-800 text-white shadow-lg shadow-blue-200 scale-105"
           : "hover:bg-gray-50 text-gray-700 hover:scale-102 border border-transparent hover:border-gray-200"
       } ${className}`}
     >
       <div
         className={`${
-          active ? "text-white" : "text-gray-500 group-hover:text-blue-500"
+          active ? "text-white" : "text-gray-500 group-hover:text-lime-500"
         } transition-colors`}
       >
         {icon}
@@ -365,27 +290,8 @@ const ProfilePage = () => {
   );
 
   const DesktopSidebar = () => (
-    <div className="hidden lg:flex flex-col bg-white w-72 min-h-screen shadow-xl fixed left-0 top-0 z-40 border-r border-gray-100 mt-20">
-      <div className="p-6 flex-1">
-        {/* <div className="mb-8">
- 
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-blue-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">
-                {profileData.firstName.charAt(0)}
-              </span>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Welcome back</p>
-              <h2 className="text-blue-500 font-bold text-xl">
-                {profileData.firstName}
-              </h2>
-            </div>
-          </div>
-          <div className="w-full h-px bg-gradient-to-r from-orange-200 to-transparent"></div>
-          
-        </div> */}
-
+    <div className="hidden lg:flex flex-col bg-white w-44 min-h-screen shadow-xl fixed left-0 top-0 z-40 border-r border-gray-100 mt-16">
+      <div className="p-3 flex-1">
         <nav className="space-y-2">
           {navItems.map((item) => (
             <SidebarItem
@@ -414,34 +320,16 @@ const ProfilePage = () => {
   );
 
   const MobileTopNav = () => (
-    <div className="lg:hidden bg-white shadow-sm border-b sticky top-0 z-30">
-      <div className="px-4 py-4 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          {/* <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-sm">
-                {profileData.firstName.charAt(0)}
-              </span>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Welcome back</p>
-              <h2 className="text-orange-500 font-bold text-lg">
-                {profileData.firstName}
-              </h2>
-            </div>
-          </div> */}
-        </div>
-      </div>
-
-      <div className="px-3 py-3">
-        <div className="flex space-x-5 overflow-x-auto pb-2">
+    <div className="lg:hidden bg-white  sticky top-0 z-30">
+      <div className="px-1 py-2">
+        <div className="flex space-x-3 overflow-x-auto p-1">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setCurrentPage(item.id)}
-              className={`flex items-center space-x-2 px-4 py-3 rounded-xl whitespace-nowrap font-medium text-sm transition-all duration-300 min-w-fit ${
+              className={`flex items-center space-x-2 px-2 py-2 rounded-xl whitespace-nowrap font-medium text-sm transition-all duration-300 min-w-fit ${
                 currentPage === item.id
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-200 scale-105"
+                  ? "bg-gradient-to-r from-lime-700 to-lime-700 text-white shadow-lg shadow-green-200 "
                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-800 border border-gray-200 bg-white"
               }`}
             >
@@ -463,217 +351,238 @@ const ProfilePage = () => {
     </div>
   );
 
-  const ProfilePageComponent = () => {
-    // const fileInputRef = React.createRef();
-    const fileInputRef = useRef(null);
+const ProfilePageComponent = () => {
+  const fileInputRef = useRef(null);
 
-    const handleImageChange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setProfileData((prev) => ({
-            ...prev,
-            profileUrl: reader.result,
-          }));
-          updateProfilePicture(file);
-        };
-        reader.readAsDataURL(file);
-      }
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith("image/");
+    const isLt5MB = file.size <= 5 * 1024 * 1024;
+    if (!isImage) {
+      // setError("Please upload a valid image file");
+      return;
+    }
+    if (!isLt5MB) {
+      // setError("Image must be less than 5 MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileData((prev) => ({
+        ...prev,
+        profileUrl: reader.result,
+      }));
+      updateProfilePicture(file);
     };
+    reader.readAsDataURL(file);
+  };
 
-    const triggerFileInput = () => {
-      fileInputRef.current.click();
-    };
+  const triggerFileInput = () => fileInputRef.current?.click();
 
-    return (
-      <div className="space-y-6">
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-            {success}
-          </div>
-        )}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            {error}
-          </div>
-        )}
+  return (
+    <div className="space-y-5 sm:space-y-6">
+      {/* Alerts */}
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
-        {showPasswordModal && (
-          <PasswordModal
-            passwordData={passwordData}
-            setPasswordData={setPasswordData}
-            changePassword={changePassword}
-            loading={loading}
-            setShowPasswordModal={setShowPasswordModal}
-          />
-        )}
+      {/* Password modal */}
+      {showPasswordModal && (
+        <PasswordModal
+          passwordData={passwordData}
+          setPasswordData={setPasswordData}
+          changePassword={changePassword}
+          loading={loading}
+          setShowPasswordModal={setShowPasswordModal}
+        />
+      )}
 
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
-          <div className="hidden lg:block">
-            <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
-            <p className="text-gray-600 mt-1">
-              Manage your personal information and preferences
-            </p>
-          </div>
-          <div className="flex space-x-3">
-            <button
-              onClick={() => setShowPasswordModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center space-x-2"
-            >
-              <Settings size={16} />
-              <span>Change Password</span>
-            </button>
-            <button
-              onClick={() => (editMode ? updateProfile() : setEditMode(true))}
-              disabled={loading}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                editMode
-                  ? "bg-green-500 text-white hover:bg-green-600 shadow-lg shadow-green-200"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-lg"
-              }`}
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" size={16} />
-              ) : editMode ? (
-                <Save size={16} />
-              ) : (
-                <Edit2 size={16} />
-              )}
-              <span>{editMode ? "Save Changes" : "Edit Profile"}</span>
-            </button>
-          </div>
+      {/* Header actions */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
+        <div className="hidden lg:block">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Profile</h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            Manage personal information and preferences
+          </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-32 relative">
-            <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-          </div>
-          <div className="px-6 pb-6 relative">
-            <div className="flex flex-col sm:flex-row sm:items-end space-y-4 sm:space-y-0 sm:space-x-6 -mt-16">
-              <div className="relative">
-                <img
-                  src={profileData.profileUrl}
-                  alt="Profile"
-                  className="w-28 h-28 rounded-2xl object-cover border-4 border-white shadow-xl"
-                />
-                {editMode && (
-                  <>
-                    <button
-                      onClick={triggerFileInput}
-                      className="absolute -bottom-2 -right-2 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-colors group"
-                    >
-                      <Camera
-                        size={16}
-                        className="group-hover:scale-110 transition-transform"
-                      />
-                    </button>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleImageChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                  </>
-                )}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-2xl font-bold text-gray-800">
-                  {profileData.firstName} {profileData.lastName}
-                </h3>
-                <p className="text-gray-600 font-medium">{profileData.email}</p>
-              </div>
-            </div>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className="bg-gradient-to-r from-lime-900 to-lime-800 text-white px-2 sm:px-3 py-2.5 rounded-xl font-medium hover:shadow-lg hover:scale-[1.02] transition-all duration-200 inline-flex items-center gap-2"
+          >
+            <Settings size={16} />
+            <span>Change Password</span>
+          </button>
 
-            <div className="mt-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <button
+            onClick={() => (editMode ? updateProfile() : setEditMode(true))}
+            disabled={loading}
+            className={`inline-flex items-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl font-medium transition-all duration-200 ${
+              editMode
+                ? "bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-200"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300 hover:shadow-md"
+            } disabled:opacity-60 disabled:cursor-not-allowed`}
+          >
+            {loading ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : editMode ? (
+              <Save size={16} />
+            ) : (
+              <Edit2 size={16} />
+            )}
+            <span className="whitespace-nowrap">
+              {editMode ? "Save Changes" : "Edit Profile"}
+            </span>
+          </button>
+        </div>
+      </div>
 
-<ProfileField
-  key="first-name"
-  label="First Name"
-  value={profileData.firstName}
-  onChange={(e) =>
-    setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
-  }
-  editMode={editMode}
-/>
+      {/* Card */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        {/* Cover */}
+        <div className="bg-gradient-to-r from-lime-900 via-lime-800 to-lime-700 h-28 sm:h-28 relative">
+          <div className="absolute inset-0 bg-black/10" />
+        </div>
 
-<ProfileField
-  key="last-name"
-  label="Last Name"
-  value={profileData.lastName}
-  onChange={(e) =>
-    setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
-  }
-  editMode={editMode}
-/>
-
-<ProfileField
-  key="email"
-  label="Email Address"
-  value={profileData.email}
-  onChange={(e) =>
-    setProfileData((prev) => ({ ...prev, email: e.target.value }))
-  }
-  editMode={editMode}
-  type="email"
-/>
-
-<ProfileField
-  key="phone"
-  label="Phone Number"
-  value={profileData.phone}
-  onChange={(e) =>
-    setProfileData((prev) => ({ ...prev, phone: e.target.value }))
-  }
-  editMode={editMode}
-  type="tel"
-/>
-
-<ProfileField
-  key="location"
-  label="Location"
-  value={profileData.location}
-  onChange={(e) =>
-    setProfileData((prev) => ({ ...prev, location: e.target.value }))
-  }
-  editMode={editMode}
-/>
-                
-              </div>
-
+        {/* Profile header */}
+        <div className="px-4 sm:px-6 pb-6 relative">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-14 sm:-mt-16">
+            <div className="relative">
+              <img
+                src={profileData.profileUrl}
+                alt="Profile"
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-4 border-white shadow-xl"
+              />
               {editMode && (
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 mt-8 p-4 bg-gray-50 rounded-xl">
+                <>
                   <button
-                    onClick={updateProfile}
-                    disabled={loading}
-                    className="bg-green-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-600 hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                    onClick={triggerFileInput}
+                    className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2.5 rounded-full shadow-lg hover:bg-blue-700 transition-colors group"
+                    aria-label="Change profile picture"
                   >
-                    {loading ? (
-                      <Loader2 className="animate-spin" size={16} />
-                    ) : (
-                      <>
-                        <Save size={16} />
-                        <span>Save Changes</span>
-                      </>
-                    )}
+                    <Camera size={16} className="group-hover:scale-110 transition-transform" />
                   </button>
-                  <button
-                    onClick={() => setEditMode(false)}
-                    className="bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-400 transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <X size={16} />
-                    <span>Cancel</span>
-                  </button>
-                </div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                </>
               )}
             </div>
+
+            <div className="flex-1 min-w-0 pt-2">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
+                {profileData.firstName} {profileData.lastName}
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 break-words">
+                {profileData.email}
+              </p>
+            </div>
+          </div>
+
+          {/* Fields */}
+          <div className="mt-6 sm:mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              <ProfileField
+                key="first-name"
+                label="First Name"
+                value={profileData.firstName}
+                onChange={(e) =>
+                  setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
+                }
+                editMode={editMode}
+              />
+
+              <ProfileField
+                key="last-name"
+                label="Last Name"
+                value={profileData.lastName}
+                onChange={(e) =>
+                  setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
+                }
+                editMode={editMode}
+              />
+
+              <ProfileField
+                key="email"
+                label="Email Address"
+                value={profileData.email}
+                onChange={(e) =>
+                  setProfileData((prev) => ({ ...prev, email: e.target.value }))
+                }
+                editMode={editMode}
+                type="email"
+              />
+
+              <ProfileField
+                key="phone"
+                label="Phone Number"
+                value={profileData.phone}
+                onChange={(e) =>
+                  setProfileData((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                editMode={editMode}
+                type="tel"
+              />
+
+              <ProfileField
+                key="location"
+                label="Location"
+                value={profileData.location}
+                onChange={(e) =>
+                  setProfileData((prev) => ({ ...prev, location: e.target.value }))
+                }
+                editMode={editMode}
+              />
+            </div>
+
+            {/* Inline action row for edit mode */}
+            {editMode && (
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8 p-3 sm:p-4 bg-gray-50 rounded-xl">
+                <button
+                  onClick={updateProfile}
+                  disabled={loading}
+                  className="bg-green-600 text-white px-4 sm:px-6 py-2.5 rounded-xl font-medium hover:bg-green-700 hover:shadow-lg transition-all duration-200 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="bg-gray-200 text-gray-800 px-4 sm:px-6 py-2.5 rounded-xl font-medium hover:bg-gray-300 transition-colors duration-200 inline-flex items-center justify-center gap-2"
+                >
+                  <X size={16} />
+                  <span>Cancel</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
+
 
   const PasswordModal = ({
     passwordData,
@@ -682,7 +591,7 @@ const ProfilePage = () => {
     loading,
     setShowPasswordModal,
   }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/30 bg-opacity-20 flex items-center justify-center z-50 ">
       <div className="bg-white rounded-2xl p-8 max-w-md w-full">
         <div className="text-center mb-6">
           <h3 className="text-2xl font-bold text-gray-800 mb-2">
@@ -822,1487 +731,299 @@ const ProfilePage = () => {
 };
 
 
-//   const ProfileField = ({ label, value, onChange, editMode, type = "text" }) => {
-//   return (
-//     <div className="space-y-2">
-//       <label className="block text-sm font-semibold text-gray-700">
-//         {label}
-//       </label>
-//       {editMode ? (
-//         <input
-//           type={type}
-//           value={value || ""}
-//           onChange={onChange}
-//           className="w-full p-3 border-2 border-gray-200 rounded-xl 
-//                      focus:ring-2 focus:ring-blue-500 focus:border-transparent 
-//                      transition-all duration-200 hover:border-blue-300"
-//           placeholder={`Enter your ${label.toLowerCase()}`}
-//         />
-//       ) : (
-//         <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-//           <p className="font-medium text-gray-800">
-//             {value || <span className="text-gray-400">Not provided</span>}
-//           </p>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
 
-//   const ProfileField = ({ label, value, onChange, editMode, type = "text" }) => {
-//   return (
-//     <div className="space-y-2">
-//       <label className="block text-sm font-semibold text-gray-700">
-//         {label}
-//       </label>
-//       {editMode ? (
-//         <input
-//           type={type}
-//           value={value || ""}
-//           onChange={onChange}
-//           className="w-full p-3 border-2 border-gray-200 rounded-xl 
-//                      focus:ring-2 focus:ring-blue-500 focus:border-transparent 
-//                      transition-all duration-200 hover:border-blue-300"
-//           placeholder={`Enter your ${label.toLowerCase()}`}
-//         />
-//       ) : (
-//         <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-//           <p className="font-medium text-gray-800">
-//             {value || <span className="text-gray-400">Not provided</span>}
-//           </p>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
+const PlansPage = () => {
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancelTripId, setCancelTripId] = useState(null);
+  const [showItinerary, setShowItinerary] = useState({});
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // const ProfileField = ({
-  //   label,
-  //   value,
-  //   onChange,
-  //   editMode,
-  //   type = "text",
-  // }) => {
-  //   // Use a controlled input with proper state management
-  //   const [inputValue, setInputValue] = React.useState(value);
+  // TODO: wire real cancelBooking + refund helpers if not in scope
+  const cancelBooking = async () => {};
+  const calculateDaysRemaining = (d) => {
+    if (!d) return 0;
+    const today = new Date();
+    const date = new Date(d);
+    return Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+  };
+  const calculateRefundPercentage = (d) => {
+    const days = calculateDaysRemaining(d);
+    if (days >= 7) return 100;
+    if (days === 6) return 75;
+    if (days === 5) return 50;
+    if (days === 4) return 25;
+    return 0;
+  };
+  const calculateRefundAmount = (d, total) =>
+    Math.round(((total || 0) * calculateRefundPercentage(d)) / 100);
 
-  //   React.useEffect(() => {
-  //     setInputValue(value);
-  //   }, [value]);
-
-  //   const handleChange = (e) => {
-  //     setInputValue(e.target.value);
-  //     if (onChange) {
-  //       onChange(e);
-  //     }
-  //   };
-
-  //   return (
-  //     <div className="space-y-2">
-  //       <label className="block text-sm font-semibold text-gray-700">
-  //         {label}
-  //       </label>
-  //       {editMode ? (
-  //         <input
-  //           type={type}
-  //           value={inputValue || ""}
-  //           onChange={handleChange}
-  //           className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
-  //           placeholder={`Enter your ${label.toLowerCase()}`}
-  //         />
-  //       ) : (
-  //         <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-  //           <p className="font-medium text-gray-800">
-  //             {value || <span className="text-gray-400">Not provided</span>}
-  //           </p>
-  //         </div>
-  //       )}
-  //     </div>
-  //   );
-  // };
-
-
-  ///old code
-  // const PlansPage = () => {
-  //   const [showCancelModal, setShowCancelModal] = useState(false);
-  //   const [cancellationReason, setCancellationReason] = useState("");
-  //   const [cancelTripId, setCancelTripId] = useState(null);
-
-  //   // Make sure these are initialized with default values
-  //   const [cancelledTrips, setCancelledTrips] = useState(new Set());
-  //   const [cancellationRequests, setCancellationRequests] = useState(new Set());
-
-  //   const handleCancelBooking = () => {
-  //     if (!cancelTripId) {
-  //       setError("No booking selected for cancellation");
-  //       return;
-  //     }
-
-  //     if (!cancellationReason || cancellationReason.trim().length < 10) {
-  //       setError(
-  //         "Please provide a valid cancellation reason (minimum 10 characters)"
-  //       );
-  //       return;
-  //     }
-
-  //     cancelBooking(cancelTripId, cancellationReason);
-  //     setShowCancelModal(false);
-  //     setCancellationReason("");
-  //     setCancelTripId(null);
-  //   };
-
-  //   const openCancelModal = (bookingId) => {
-  //     setCancelTripId(bookingId);
-  //     setShowCancelModal(true);
-  //   };
-
-  //   const toggleItinerary = (bookingId) => {
-  //     setShowItinerary((prev) => ({
-  //       ...prev,
-  //       [bookingId]: !prev[bookingId],
-  //     }));
-  //   };
-
-  //   const bookingDetails =
-  //     bookings?.find((b) => b._id === cancelTripId) || null;
-
-  //   return (
-  //     <div className="min-h-screen bg-gray-50">
-  //       {showCancelModal && (
-  //         <CancelBookingModal
-  //           bookingDetails={bookingDetails}
-  //           cancellationReason={cancellationReason}
-  //           setCancellationReason={setCancellationReason}
-  //           handleCancelBooking={handleCancelBooking}
-  //           loading={loading}
-  //           calculateDaysRemaining={calculateDaysRemaining}
-  //           calculateRefundPercentage={calculateRefundPercentage}
-  //           calculateRefundAmount={calculateRefundAmount}
-  //           setShowCancelModal={setShowCancelModal}
-  //           setCancelTripId={setCancelTripId}
-  //         />
-  //       )}
-
-  //       <div className="bg-white shadow-sm">
-  //         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  //           <div className="text-center lg:text-left">
-  //             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-  //               My Travel Plans
-  //             </h1>
-  //             <p className="text-lg text-gray-600">
-  //               Manage your upcoming adventures and travel experiences
-  //             </p>
-  //           </div>
-  //         </div>
-  //       </div>
-
-  //       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  //         {loading && !bookings.length ? (
-  //           <div className="flex justify-center items-center h-64">
-  //             <Loader2 className="animate-spin text-blue-500" size={32} />
-  //           </div>
-  //         ) : bookings.length === 0 ? (
-  //           <div className="text-center py-12">
-  //             <h3 className="text-xl font-medium text-gray-700">
-  //               No upcoming trips
-  //             </h3>
-  //             <p className="text-gray-500 mt-2">
-  //               You don't have any upcoming trips booked yet.
-  //             </p>
-  //           </div>
-  //         ) : (
-  //           <div className="space-y-8">
-  //             {bookings.map((booking) => {
-  //               const isCancelled = cancelledTrips?.has(booking._id) || false;
-  //               const isCancellationRequested =
-  //                 cancellationRequests?.has(booking._id) || false;
-  //               const trip = booking.tripDetails || {};
-
-  //               return (
-  //                 <BookingCard
-  //                   key={booking._id}
-  //                   booking={booking}
-  //                   trip={trip}
-  //                   isCancelled={isCancelled}
-  //                   isCancellationRequested={isCancellationRequested}
-  //                   showItinerary={showItinerary[booking._id]}
-  //                   formatDate={formatDate}
-  //                   openCancelModal={openCancelModal}
-  //                   downloadItinerary={downloadItinerary}
-  //                   toggleItinerary={toggleItinerary}
-  //                 />
-  //               );
-  //             })}
-  //           </div>
-  //         )}
-  //       </div>
-  //     </div>
-  //   );
-  // };
-
-  ///new code
-
-  const PlansPage = () => {
-    const [showCancelModal, setShowCancelModal] = useState(false);
-    const [cancellationReason, setCancellationReason] = useState("");
-    const [cancelTripId, setCancelTripId] = useState(null);
-    const [showItinerary, setShowItinerary] = useState({});
-    const [bookings, setBookings] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    // Make sure these are initialized with default values
-    const [cancelledTrips, setCancelledTrips] = useState(new Set());
-    const [cancellationRequests, setCancellationRequests] = useState(new Set());
-
-    // Fetch bookings from API
-    useEffect(() => {
-      const fetchBookings = async () => {
-        try {
-          setLoading(true);
-          const response = await axiosInstance.get("/api/users/bookings");
-
-          // Filter out bookings with payment amount 0 or no payment
-          const filteredBookings = response.data.filter(
-            (booking) => booking.payment && booking.payment.grandTotal > 0
-          );
-
-          setBookings(filteredBookings);
-        } catch (err) {
-          setError(err.response?.data?.message || "Failed to fetch bookings");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchBookings();
-    }, []);
-
-    const handleCancelBooking = () => {
-      if (!cancelTripId) {
-        setError("No booking selected for cancellation");
-        return;
-      }
-
-      if (!cancellationReason || cancellationReason.trim().length < 10) {
-        setError(
-          "Please provide a valid cancellation reason (minimum 10 characters)"
+  // Fetch bookings
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await axiosInstance.get("/api/users/bookings");
+        const filtered =
+          Array.isArray(res.data)
+            ? res.data
+            : Array.isArray(res.data?.bookings)
+            ? res.data.bookings
+            : [];
+        const paidOnly = filtered.filter(
+          (b) => b.payment && Number(b.payment.grandTotal) > 0
         );
-        return;
+        setBookings(paidOnly);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to fetch bookings");
+      } finally {
+        setLoading(false);
       }
-
-      cancelBooking(cancelTripId, cancellationReason);
-      setShowCancelModal(false);
-      setCancellationReason("");
-      setCancelTripId(null);
     };
+    fetchBookings();
+  }, []);
 
-    const openCancelModal = (bookingId) => {
-      setCancelTripId(bookingId);
-      setShowCancelModal(true);
-    };
+  const handleCancelBooking = () => {
+    if (!cancelTripId) {
+      setError("No booking selected for cancellation");
+      return;
+    }
+    if (!cancellationReason || cancellationReason.trim().length < 10) {
+      setError(
+        "Please provide a valid cancellation reason (minimum 10 characters)"
+      );
+      return;
+    }
+    cancelBooking(cancelTripId, cancellationReason);
+    setShowCancelModal(false);
+    setCancellationReason("");
+    setCancelTripId(null);
+  };
 
-    const toggleItinerary = (bookingId) => {
-      setShowItinerary((prev) => ({
-        ...prev,
-        [bookingId]: !prev[bookingId],
-      }));
-    };
+  const openCancelModal = (bookingId) => {
+    setCancelTripId(bookingId);
+    setShowCancelModal(true);
+  };
 
-    const formatDate = (dateString) => {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    };
+  const toggleItinerary = (bookingId) =>
+    setShowItinerary((p) => ({ ...p, [bookingId]: !p[bookingId] }));
 
-    const bookingDetails =
-      bookings?.find((b) => b._id === cancelTripId) || null;
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
 
-    return (
-      <div className="min-h-screen bg-gray-50">
-        {showCancelModal && (
-          <CancelBookingModal
-            bookingDetails={bookingDetails}
-            cancellationReason={cancellationReason}
-            setCancellationReason={setCancellationReason}
-            handleCancelBooking={handleCancelBooking}
-            loading={loading}
-            calculateDaysRemaining={calculateDaysRemaining}
-            calculateRefundPercentage={calculateRefundPercentage}
-            calculateRefundAmount={calculateRefundAmount}
-            setShowCancelModal={setShowCancelModal}
-            setCancelTripId={setCancelTripId}
-          />
-        )}
+  const bookingDetails = bookings?.find((b) => b._id === cancelTripId) || null;
 
-        <div className="bg-white shadow-sm">
-          <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center lg:text-left">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                My Travel Plans
-              </h1>
-              <p className="text-lg text-gray-600">
-                Manage your upcoming adventures and travel experiences
-              </p>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Modal */}
+      {showCancelModal && (
+        <CancelBookingModal
+          bookingDetails={bookingDetails}
+          cancellationReason={cancellationReason}
+          setCancellationReason={setCancellationReason}
+          handleCancelBooking={handleCancelBooking}
+          loading={loading}
+          calculateDaysRemaining={calculateDaysRemaining}
+          calculateRefundPercentage={calculateRefundPercentage}
+          calculateRefundAmount={calculateRefundAmount}
+          setShowCancelModal={setShowCancelModal}
+          setCancelTripId={setCancelTripId}
+        />
+      )}
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {loading && !bookings.length ? (
+          <div className="flex justify-center items-center h-56 sm:h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-blue-600" />
           </div>
-        </div>
+        ) : bookings.length === 0 ? (
+          <div className="text-center py-12 sm:py-16">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
+              No upcoming trips
+            </h3>
+            <p className="text-sm sm:text-base text-gray-500 mt-2">
+              No trips found with successful payments.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6 sm:space-y-8">
+            {bookings.map((booking) => {
+              const trip = booking.tripDetails || {};
+              const isCustomized = booking.tripType === "CUSTOMIZED";
+              const isCancelled = booking.requestStatus === "CANCELLED";
+              const isCancellationRequested =
+                booking.requestStatus === "CANCELLATION_REQUESTED" ||
+                booking.requestStatus === "PENDING";
 
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {loading && !bookings.length ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="animate-spin text-blue-500" size={32} />
-            </div>
-          ) : bookings.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-xl font-medium text-gray-700">
-                No upcoming trips
-              </h3>
-              <p className="text-gray-500 mt-2">
-                You don't have any upcoming trips booked yet.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {bookings.map((booking) => {
-                // const isCancelled = cancelledTrips?.has(booking._id) || false;
-                // const isCancellationRequested =
-                //   cancellationRequests?.has(booking._id) || false;
+              const itineraryToUse =
+                isCustomized && booking.customItinerary
+                  ? booking.customItinerary.itinerary
+                  : trip.itinerary;
 
-                const trip = booking.tripDetails || {};
-                const isCustomized = booking.tripType === "CUSTOMIZED";
+              return (
+                <div
+                  key={booking._id}
+                  className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
+                >
+                  {/* Header row */}
+                  <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
+                        {booking.title || trip.title || "Trip Title"}
+                      </h2>
+                      <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                        {trip.state || "Destination"}
+                      </p>
+                    </div>
+                    <div
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ${
+                        isCustomized
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      <span className="whitespace-nowrap">
+                        {isCustomized ? "Customized Trip" : "Package Trip"}
+                      </span>
+                    </div>
+                  </div>
 
-                const isCancelled = booking.requestStatus === "CANCELLED";
-                const isCancellationRequested =
-                  booking.requestStatus === "CANCELLATION_REQUESTED" ||
-                  booking.requestStatus === "PENDING";
-
-                // Determine which itinerary to use - for customized trips, use customItinerary
-                const itineraryToUse =
-                  isCustomized && booking.customItinerary
-                    ? booking.customItinerary.itinerary
-                    : trip.itinerary;
-
-                return (
-                  <div
-                    key={booking._id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200"
-                  >
-                    {/* Trip Header with Type Badge */}
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900">
-                          {booking.title || trip.title || "Trip Title"}
-                        </h2>
-                        <p className="text-gray-600 mt-1">
-                          {trip.state || "Destination"}
+                  {/* Details grid */}
+                  <div className="p-4 sm:p-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
+                      <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                        <p className="text-[11px] sm:text-xs text-gray-500">
+                          Duration
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold">
+                          {booking.duration || "N/A"}
                         </p>
                       </div>
-                      <div
-                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-full ${
-                          isCustomized
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {isCustomized ? (
-                          <>
-                            <Settings size={14} />
-                            <span className="text-xs font-medium">
-                              Customized Trip
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Package size={14} />
-                            <span className="text-xs font-medium">
-                              Package Trip
-                            </span>
-                          </>
-                        )}
+                      <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                        <p className="text-[11px] sm:text-xs text-gray-500">
+                          Travel Dates
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold">
+                          {booking.startDate ? formatDate(booking.startDate) : "-"}
+                          {" - "}
+                          {booking.endDate ? formatDate(booking.endDate) : "-"}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                        <p className="text-[11px] sm:text-xs text-gray-500">
+                          Travelers
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold">
+                          {booking.total_members || 0}{" "}
+                          {(booking.total_members || 0) === 1 ? "Person" : "People"}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                        <p className="text-[11px] sm:text-xs text-gray-500">
+                          Booking ID
+                        </p>
+                        <p className="text-sm sm:text-base font-semibold break-all">
+                          {booking.tripId || "N/A"}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Trip Details */}
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="text-sm text-gray-500">Duration</p>
-                          <p className="font-semibold">
-                            {booking.duration || "N/A"}
-                          </p>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="text-sm text-gray-500">Travel Dates</p>
-                          <p className="font-semibold">
-                            {formatDate(booking.startDate)} -{" "}
-                            {formatDate(booking.endDate)}
-                          </p>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="text-sm text-gray-500">Travelers</p>
-                          <p className="font-semibold">
-                            {booking.total_members || 0}{" "}
-                            {booking.total_members === 1 ? "Person" : "People"}
-                          </p>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="text-sm text-gray-500">Booking ID</p>
-                          <p className="font-semibold">
-                            {booking.tripId || "N/A"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Itinerary Section */}
-                      {itineraryToUse && itineraryToUse.length > 0 && (
-                        <div className="mt-6">
-                          <button
-                            onClick={() => toggleItinerary(booking._id)}
-                            className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                    {/* Itinerary */}
+                    {Array.isArray(itineraryToUse) && itineraryToUse.length > 0 && (
+                      <div className="mt-4 sm:mt-6">
+                        <button
+                          onClick={() => toggleItinerary(booking._id)}
+                          className="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base inline-flex items-center"
+                        >
+                          {showItinerary[booking._id] ? "Hide" : "View"} Detailed Itinerary
+                          <svg
+                            className={`ml-2 h-4 w-4 transition-transform ${
+                              showItinerary[booking._id] ? "rotate-180" : ""
+                            }`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            {showItinerary[booking._id] ? "Hide" : "View"}{" "}
-                            Detailed Itinerary
-                            <svg
-                              className={`ml-2 h-4 w-4 transition-transform ${
-                                showItinerary[booking._id] ? "rotate-180" : ""
-                              }`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 9l-7 7-7-7"
-                              />
-                            </svg>
-                          </button>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
 
-                          {showItinerary[booking._id] && (
-                            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                              <h4 className="font-semibold text-lg mb-4">
-                                Itinerary Details
-                              </h4>
-                              <div className="space-y-4">
-                                {itineraryToUse.map((day, index) => (
-                                  <div
-                                    key={index}
-                                    className="p-4 bg-white rounded-md shadow-sm"
-                                  >
-                                    <h5 className="font-medium text-gray-900">
-                                      Day {day.dayNumber || index + 1}:{" "}
-                                      {day.title ||
-                                        `Day ${day.dayNumber || index + 1}`}
-                                    </h5>
-                                    {day.description && (
-                                      <p className="text-gray-600 mt-2">
-                                        {day.description}
-                                      </p>
-                                    )}
-                                    {day.points && day.points.length > 0 && (
-                                      <div className="mt-3">
-                                        <h6 className="text-sm font-medium text-gray-700 mb-2">
-                                          Activities:
-                                        </h6>
-                                        <ul className="list-disc list-inside space-y-1">
-                                          {day.points.map(
-                                            (point, pointIndex) => (
-                                              <li
-                                                key={pointIndex}
-                                                className="text-sm text-gray-600"
-                                              >
-                                                {point}
-                                              </li>
-                                            )
-                                          )}
-                                        </ul>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
+                        {showItinerary[booking._id] && (
+                          <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-base sm:text-lg mb-3">
+                              Itinerary Details
+                            </h4>
+                            <div className="space-y-3 sm:space-y-4">
+                              {itineraryToUse.map((day, idx) => (
+                                <div key={idx} className="p-3 sm:p-4 bg-white rounded-md shadow-sm">
+                                  <h5 className="font-medium text-gray-900 text-sm sm:text-base">
+                                    Day {day.dayNumber || idx + 1}:{" "}
+                                    {day.title || `Day ${day.dayNumber || idx + 1}`}
+                                  </h5>
+                                  {day.description && (
+                                    <p className="text-gray-600 mt-2 text-sm">{day.description}</p>
+                                  )}
+                                  {Array.isArray(day.points) && day.points.length > 0 && (
+                                    <div className="mt-2 sm:mt-3">
+                                      <h6 className="text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                        Activities:
+                                      </h6>
+                                      <ul className="list-disc list-inside space-y-1">
+                                        {day.points.map((p, i) => (
+                                          <li key={i} className="text-xs sm:text-sm text-gray-600">
+                                            {p}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
                             </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      {/* <div className="mt-6 flex space-x-4">
-                        {!isCancelled && !isCancellationRequested && (
-                          <button
-                            onClick={() => openCancelModal(booking._id)}
-                            className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-                          >
-                            Cancel Trip
-                          </button>
-                        )}
-                        {isCancellationRequested && (
-                          <span className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-md">
-                            Cancellation Requested
-                          </span>
-                        )}
-                        {isCancelled && (
-                          <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md">
-                            Trip Cancelled
-                          </span>
-                        )}
-                      </div> */}
-                      <div className="mt-6 flex space-x-4">
-                        {!isCancelled && !isCancellationRequested && (
-                          <button
-                            onClick={() => openCancelModal(booking._id)}
-                            className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-                          >
-                            Cancel Trip
-                          </button>
-                        )}
-
-                        {isCancellationRequested && (
-                          <span className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-md">
-                            Cancellation Requested
-                          </span>
-                        )}
-
-                        {isCancelled && (
-                          <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md">
-                            Trip Cancelled
-                          </span>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // const PlansPage = () => {
-  //   const [showCancelModal, setShowCancelModal] = useState(false);
-  //   const [cancellationReason, setCancellationReason] = useState("");
-  //   const [cancelTripId, setCancelTripId] = useState(null);
-  //   const [showItinerary, setShowItinerary] = useState({});
-  //   const [bookings, setBookings] = useState([]);
-  //   const [loading, setLoading] = useState(true);
-  //   const [error, setError] = useState(null);
-
-  //   // Make sure these are initialized with default values
-  //   const [cancelledTrips, setCancelledTrips] = useState(new Set());
-  //   const [cancellationRequests, setCancellationRequests] = useState(new Set());
-
-  //   // Fetch bookings from API
-  //   useEffect(() => {
-  //     const fetchBookings = async () => {
-  //       try {
-  //         setLoading(true);
-  //         const response = await axiosInstance.get("/api/users/bookings");
-
-  //         // Filter out bookings with payment amount 0 or no payment
-  //         const filteredBookings = response.data.filter(booking =>
-  //           booking.payment && booking.payment.grandTotal > 0
-  //         );
-
-  //         setBookings(filteredBookings);
-  //       } catch (err) {
-  //         setError(err.response?.data?.message || "Failed to fetch bookings");
-  //       } finally {
-  //         setLoading(false);
-  //       }
-  //     };
-
-  //     fetchBookings();
-  //   }, []);
-
-  //   const handleCancelBooking = () => {
-  //     if (!cancelTripId) {
-  //       setError("No booking selected for cancellation");
-  //       return;
-  //     }
-
-  //     if (!cancellationReason || cancellationReason.trim().length < 10) {
-  //       setError(
-  //         "Please provide a valid cancellation reason (minimum 10 characters)"
-  //       );
-  //       return;
-  //     }
-
-  //     cancelBooking(cancelTripId, cancellationReason);
-  //     setShowCancelModal(false);
-  //     setCancellationReason("");
-  //     setCancelTripId(null);
-  //   };
-
-  //   const openCancelModal = (bookingId) => {
-  //     setCancelTripId(bookingId);
-  //     setShowCancelModal(true);
-  //   };
-
-  //   const toggleItinerary = (bookingId) => {
-  //     setShowItinerary((prev) => ({
-  //       ...prev,
-  //       [bookingId]: !prev[bookingId],
-  //     }));
-  //   };
-
-  //   const formatDate = (dateString) => {
-  //     return new Date(dateString).toLocaleDateString("en-US", {
-  //       year: "numeric",
-  //       month: "short",
-  //       day: "numeric",
-  //     });
-  //   };
-
-  //   const bookingDetails =
-  //     bookings?.find((b) => b._id === cancelTripId) || null;
-
-  //   return (
-  //     <div className="min-h-screen bg-gray-50">
-  //       {showCancelModal && (
-  //         <CancelBookingModal
-  //           bookingDetails={bookingDetails}
-  //           cancellationReason={cancellationReason}
-  //           setCancellationReason={setCancellationReason}
-  //           handleCancelBooking={handleCancelBooking}
-  //           loading={loading}
-  //           calculateDaysRemaining={calculateDaysRemaining}
-  //           calculateRefundPercentage={calculateRefundPercentage}
-  //           calculateRefundAmount={calculateRefundAmount}
-  //           setShowCancelModal={setShowCancelModal}
-  //           setCancelTripId={setCancelTripId}
-  //         />
-  //       )}
-
-  //       {/* Header Section - More Compact */}
-  //       <div className="bg-white shadow-sm border-b">
-  //         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-  //           <h1 className="text-2xl font-bold text-gray-900">My Travel Plans</h1>
-  //           <p className="text-sm text-gray-600 mt-1">
-  //             Manage your upcoming adventures and travel experiences
-  //           </p>
-  //         </div>
-  //       </div>
-
-  //       {/* Main Content */}
-  //       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-  //         {loading && !bookings.length ? (
-  //           <div className="flex justify-center items-center h-48">
-  //             <Loader2 className="animate-spin text-blue-500" size={28} />
-  //           </div>
-  //         ) : bookings.length === 0 ? (
-  //           <div className="text-center py-8">
-  //             <h3 className="text-lg font-medium text-gray-700">
-  //               No upcoming trips
-  //             </h3>
-  //             <p className="text-gray-500 mt-1">
-  //               You don't have any upcoming trips booked yet.
-  //             </p>
-  //           </div>
-  //         ) : (
-  //           <div className="space-y-4">
-  //             {bookings.map((booking) => {
-  //               const isCancelled = cancelledTrips?.has(booking._id) || false;
-  //               const isCancellationRequested =
-  //                 cancellationRequests?.has(booking._id) || false;
-  //               const trip = booking.tripDetails || {};
-  //               const isCustomized = booking.tripType === "CUSTOMIZED";
-
-  //               // Determine which itinerary to use - for customized trips, use customItinerary
-  //               const itineraryToUse = isCustomized && booking.customItinerary
-  //                 ? booking.customItinerary.itinerary
-  //                 : trip.itinerary;
-
-  //               return (
-  //                 <div key={booking._id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-  //                   {/* Trip Header - Compact Design */}
-  //                   <div className="p-4 border-b border-gray-50">
-  //                     <div className="flex justify-between items-start">
-  //                       <div className="flex-1">
-  //                         <div className="flex items-center gap-3 mb-2">
-  //                           <h2 className="text-xl font-bold text-gray-900">
-  //                             {booking.title || trip.title || "Trip Title"}
-  //                           </h2>
-  //                           <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${isCustomized ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-  //                             {isCustomized ? (
-  //                               <>
-  //                                 <Settings size={12} />
-  //                                 <span>Custom</span>
-  //                               </>
-  //                             ) : (
-  //                               <>
-  //                                 <Package size={12} />
-  //                                 <span>Package</span>
-  //                               </>
-  //                             )}
-  //                           </div>
-  //                         </div>
-  //                         <p className="text-gray-600 text-sm">
-  //                           {trip.state || "Destination"}
-  //                         </p>
-  //                       </div>
-
-  //                       {/* Status Badge */}
-  //                       <div className="ml-4">
-  //                         {isCancelled && (
-  //                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-  //                             Cancelled
-  //                           </span>
-  //                         )}
-  //                         {isCancellationRequested && !isCancelled && (
-  //                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-  //                             Cancellation Requested
-  //                           </span>
-  //                         )}
-  //                       </div>
-  //                     </div>
-  //                   </div>
-
-  //                   {/* Trip Details - Grid Layout */}
-  //                   <div className="p-4">
-  //                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-  //                       <div className="bg-gray-50 p-3 rounded-lg">
-  //                         <p className="text-xs text-gray-500 uppercase tracking-wide">Duration</p>
-  //                         <p className="font-semibold text-sm mt-1">{booking.duration || "N/A"}</p>
-  //                       </div>
-  //                       <div className="bg-gray-50 p-3 rounded-lg">
-  //                         <p className="text-xs text-gray-500 uppercase tracking-wide">Travel Dates</p>
-  //                         <p className="font-semibold text-sm mt-1">
-  //                           {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
-  //                         </p>
-  //                       </div>
-  //                       <div className="bg-gray-50 p-3 rounded-lg">
-  //                         <p className="text-xs text-gray-500 uppercase tracking-wide">Travelers</p>
-  //                         <p className="font-semibold text-sm mt-1">
-  //                           {booking.total_members || 0} {booking.total_members === 1 ? "Person" : "People"}
-  //                         </p>
-  //                       </div>
-  //                       <div className="bg-gray-50 p-3 rounded-lg">
-  //                         <p className="text-xs text-gray-500 uppercase tracking-wide">Booking ID</p>
-  //                         <p className="font-semibold text-sm mt-1">{booking.tripId || "N/A"}</p>
-  //                       </div>
-  //                     </div>
-
-  //                     {/* Itinerary Section */}
-  //                     {itineraryToUse && itineraryToUse.length > 0 && (
-  //                       <div className="mb-4">
-  //                         <button
-  //                           onClick={() => toggleItinerary(booking._id)}
-  //                           className="flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm"
-  //                         >
-  //                           {showItinerary[booking._id] ? "Hide" : "View"} Itinerary
-  //                           <svg
-  //                             className={`ml-1 h-4 w-4 transition-transform ${showItinerary[booking._id] ? "rotate-180" : ""}`}
-  //                             fill="none"
-  //                             viewBox="0 0 24 24"
-  //                             stroke="currentColor"
-  //                           >
-  //                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  //                           </svg>
-  //                         </button>
-
-  //                         {showItinerary[booking._id] && (
-  //                           <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-  //                             <h4 className="font-semibold text-base mb-3">Itinerary Details</h4>
-  //                             <div className="space-y-3 max-h-80 overflow-y-auto">
-  //                               {itineraryToUse.map((day, index) => (
-  //                                 <div key={index} className="p-3 bg-white rounded-md border border-gray-100">
-  //                                   <h5 className="font-medium text-gray-900 text-sm">
-  //                                     Day {day.dayNumber || index + 1}: {day.title || `Day ${day.dayNumber || index + 1}`}
-  //                                   </h5>
-  //                                   {day.description && (
-  //                                     <p className="text-gray-600 mt-1 text-sm">{day.description}</p>
-  //                                   )}
-  //                                   {day.points && day.points.length > 0 && (
-  //                                     <div className="mt-2">
-  //                                       <h6 className="text-xs font-medium text-gray-700 mb-1">Activities:</h6>
-  //                                       <ul className="list-disc list-inside space-y-0.5">
-  //                                         {day.points.map((point, pointIndex) => (
-  //                                           <li key={pointIndex} className="text-xs text-gray-600">
-  //                                             {point}
-  //                                           </li>
-  //                                         ))}
-  //                                       </ul>
-  //                                     </div>
-  //                                   )}
-  //                                 </div>
-  //                               ))}
-  //                             </div>
-  //                           </div>
-  //                         )}
-  //                       </div>
-  //                     )}
-
-  //                     {/* Action Button */}
-  //                     {!isCancelled && !isCancellationRequested && (
-  //                       <button
-  //                         onClick={() => openCancelModal(booking._id)}
-  //                         className="inline-flex items-center px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
-  //                       >
-  //                         Cancel Trip
-  //                       </button>
-  //                     )}
-  //                   </div>
-  //                 </div>
-  //               );
-  //             })}
-  //           </div>
-  //         )}
-  //       </div>
-  //     </div>
-  //   );
-  // };
-
-  // const PlansPage = () => {
-  //   const [showCancelModal, setShowCancelModal] = useState(false);
-  //   const [cancellationReason, setCancellationReason] = useState("");
-  //   const [cancelTripId, setCancelTripId] = useState(null);
-  //   const [showItinerary, setShowItinerary] = useState({});
-  //   const [bookings, setBookings] = useState([]);
-  //   const [loading, setLoading] = useState(true);
-  //   const [error, setError] = useState(null);
-
-  //   // Make sure these are initialized with default values
-  //   const [cancelledTrips, setCancelledTrips] = useState(new Set());
-  //   const [cancellationRequests, setCancellationRequests] = useState(new Set());
-
-  //   // Fetch bookings from API
-  //   useEffect(() => {
-  //     const fetchBookings = async () => {
-  //       try {
-  //         setLoading(true);
-  //         const response = await axiosInstance.get("/api/users/bookings");
-
-  //         // Filter out bookings with payment amount 0 or no payment
-  //         const filteredBookings = response.data.filter(booking =>
-  //           booking.payment && booking.payment.grandTotal > 0
-  //         );
-
-  //         setBookings(filteredBookings);
-  //       } catch (err) {
-  //         setError(err.response?.data?.message || "Failed to fetch bookings");
-  //       } finally {
-  //         setLoading(false);
-  //       }
-  //     };
-
-  //     fetchBookings();
-  //   }, []);
-
-  //   const handleCancelBooking = () => {
-  //     if (!cancelTripId) {
-  //       setError("No booking selected for cancellation");
-  //       return;
-  //     }
-
-  //     if (!cancellationReason || cancellationReason.trim().length < 10) {
-  //       setError(
-  //         "Please provide a valid cancellation reason (minimum 10 characters)"
-  //       );
-  //       return;
-  //     }
-
-  //     cancelBooking(cancelTripId, cancellationReason);
-  //     setShowCancelModal(false);
-  //     setCancellationReason("");
-  //     setCancelTripId(null);
-  //   };
-
-  //   const openCancelModal = (bookingId) => {
-  //     setCancelTripId(bookingId);
-  //     setShowCancelModal(true);
-  //   };
-
-  //   const toggleItinerary = (bookingId) => {
-  //     setShowItinerary((prev) => ({
-  //       ...prev,
-  //       [bookingId]: !prev[bookingId],
-  //     }));
-  //   };
-
-  //   const formatDate = (dateString) => {
-  //     return new Date(dateString).toLocaleDateString("en-US", {
-  //       month: "short",
-  //       day: "numeric",
-  //     });
-  //   };
-
-  //   const bookingDetails =
-  //     bookings?.find((b) => b._id === cancelTripId) || null;
-
-  //   return (
-  //     <div className="min-h-screen bg-gray-50">
-  //       {showCancelModal && (
-  //         <CancelBookingModal
-  //           bookingDetails={bookingDetails}
-  //           cancellationReason={cancellationReason}
-  //           setCancellationReason={setCancellationReason}
-  //           handleCancelBooking={handleCancelBooking}
-  //           loading={loading}
-  //           calculateDaysRemaining={calculateDaysRemaining}
-  //           calculateRefundPercentage={calculateRefundPercentage}
-  //           calculateRefundAmount={calculateRefundAmount}
-  //           setShowCancelModal={setShowCancelModal}
-  //           setCancelTripId={setCancelTripId}
-  //         />
-  //       )}
-
-  //       {/* Compact Header */}
-  //       <div className="bg-white border-b">
-  //         <div className="max-w-6xl mx-auto px-4 py-3">
-  //           <h1 className="text-xl font-bold text-gray-900">My Travel Plans</h1>
-  //         </div>
-  //       </div>
-
-  //       {/* Main Content */}
-  //       <div className="max-w-6xl mx-auto px-4 py-4">
-  //         {loading && !bookings.length ? (
-  //           <div className="flex justify-center items-center h-32">
-  //             <Loader2 className="animate-spin text-blue-500" size={24} />
-  //           </div>
-  //         ) : bookings.length === 0 ? (
-  //           <div className="text-center py-8 bg-white rounded-lg">
-  //             <h3 className="text-lg font-medium text-gray-700">No upcoming trips</h3>
-  //             <p className="text-gray-500 text-sm mt-1">You don't have any trips booked yet.</p>
-  //           </div>
-  //         ) : (
-  //           <div className="space-y-3">
-  //             {bookings.map((booking) => {
-  //               const isCancelled = cancelledTrips?.has(booking._id) || false;
-  //               const isCancellationRequested = cancellationRequests?.has(booking._id) || false;
-  //               const isCustomized = booking.tripType === "CUSTOMIZED";
-
-  //               // Get trip data - prioritize customItinerary for customized trips
-  //               const tripData = isCustomized && booking.customItinerary
-  //                 ? booking.customItinerary
-  //                 : (booking.tripDetails || {});
-
-  //               const itineraryToUse = isCustomized && booking.customItinerary
-  //                 ? booking.customItinerary.itinerary
-  //                 : (booking.tripDetails?.itinerary || []);
-
-  //               // Get payment amount
-  //               const paymentAmount = booking.payment?.grandTotal || tripData.payment?.grandTotal || 0;
-
-  //               return (
-  //                 <div key={booking._id} className="bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
-
-  //                   {/* Main Trip Info Row */}
-  //                   <div className="p-4">
-  //                     <div className="flex items-center justify-between">
-
-  //                       {/* Left: Trip Title & Destination */}
-  //                       <div className="flex-1 min-w-0">
-  //                         <div className="flex items-center gap-2 mb-1">
-  //                           <h2 className="text-lg font-semibold text-gray-900 truncate">
-  //                             {tripData.title || booking.title || "Trip"}
-  //                           </h2>
-  //                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isCustomized ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-  //                             {isCustomized ? 'Custom' : 'Package'}
-  //                           </span>
-  //                         </div>
-  //                         <p className="text-sm text-gray-600">{tripData.state}</p>
-  //                       </div>
-
-  //                       {/* Center: Key Details */}
-  //                       <div className="hidden lg:flex items-center gap-8 mx-6">
-  //                         <div className="text-center">
-  //                           <p className="text-xs text-gray-500">Duration</p>
-  //                           <p className="text-sm font-medium">{booking.duration}</p>
-  //                         </div>
-  //                         <div className="text-center">
-  //                           <p className="text-xs text-gray-500">Dates</p>
-  //                           <p className="text-sm font-medium">
-  //                             {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
-  //                           </p>
-  //                         </div>
-  //                         <div className="text-center">
-  //                           <p className="text-xs text-gray-500">Travelers</p>
-  //                           <p className="text-sm font-medium">{booking.total_members} People</p>
-  //                         </div>
-  //                         <div className="text-center">
-  //                           <p className="text-xs text-gray-500">Amount</p>
-  //                           <p className="text-sm font-medium">₹{paymentAmount.toLocaleString()}</p>
-  //                         </div>
-  //                       </div>
-
-  //                       {/* Right: Status & Actions */}
-  //                       <div className="flex items-center gap-3">
-  //                         {/* Status Badge */}
-  //                         {isCancelled ? (
-  //                           <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-  //                             Cancelled
-  //                           </span>
-  //                         ) : isCancellationRequested ? (
-  //                           <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
-  //                             Cancellation Pending
-  //                           </span>
-  //                         ) : (
-  //                           <button
-  //                             onClick={() => openCancelModal(booking._id)}
-  //                             className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-medium rounded-full transition-colors"
-  //                           >
-  //                             Cancel
-  //                           </button>
-  //                         )}
-
-  //                         {/* Itinerary Toggle */}
-  //                         {itineraryToUse && itineraryToUse.length > 0 && (
-  //                           <button
-  //                             onClick={() => toggleItinerary(booking._id)}
-  //                             className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-  //                           >
-  //                             <svg
-  //                               className={`w-4 h-4 transition-transform ${showItinerary[booking._id] ? "rotate-180" : ""}`}
-  //                               fill="none"
-  //                               viewBox="0 0 24 24"
-  //                               stroke="currentColor"
-  //                             >
-  //                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  //                             </svg>
-  //                           </button>
-  //                         )}
-  //                       </div>
-  //                     </div>
-
-  //                     {/* Mobile Details Row */}
-  //                     <div className="lg:hidden mt-3 grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
-  //                       <div>
-  //                         <p className="text-xs text-gray-500">Duration & Travelers</p>
-  //                         <p className="text-sm font-medium">{booking.duration} • {booking.total_members} People</p>
-  //                       </div>
-  //                       <div>
-  //                         <p className="text-xs text-gray-500">Travel Dates</p>
-  //                         <p className="text-sm font-medium">
-  //                           {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
-  //                         </p>
-  //                       </div>
-  //                     </div>
-  //                   </div>
-
-  //                   {/* Expandable Itinerary */}
-  //                   {showItinerary[booking._id] && itineraryToUse && itineraryToUse.length > 0 && (
-  //                     <div className="border-t border-gray-100 p-4">
-  //                       <div className="space-y-2 max-h-60 overflow-y-auto">
-  //                         {itineraryToUse.map((day, index) => (
-  //                           <div key={index} className="flex gap-3 p-2 bg-gray-50 rounded">
-  //                             <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-  //                               <span className="text-xs font-medium text-blue-700">{day.dayNumber || index + 1}</span>
-  //                             </div>
-  //                             <div className="flex-1 min-w-0">
-  //                               <h5 className="font-medium text-sm text-gray-900 truncate">
-  //                                 {day.title}
-  //                               </h5>
-  //                               {day.description && (
-  //                                 <p className="text-xs text-gray-600 mt-1">{day.description}</p>
-  //                               )}
-  //                               {day.points && day.points.length > 0 && (
-  //                                 <p className="text-xs text-gray-500 mt-1">
-  //                                   {day.points.join(' • ')}
-  //                                 </p>
-  //                               )}
-  //                             </div>
-  //                           </div>
-  //                         ))}
-  //                       </div>
-
-  //                       {/* Trip Details at Bottom */}
-  //                       <div className="mt-3 pt-3 border-t border-gray-200">
-  //                         <div className="flex items-center justify-between text-sm">
-  //                           <span className="text-gray-500">Booking ID:</span>
-  //                           <span className="font-medium">{booking.tripId}</span>
-  //                         </div>
-  //                         {paymentAmount > 0 && (
-  //                           <div className="flex items-center justify-between text-sm mt-1">
-  //                             <span className="text-gray-500">Total Amount:</span>
-  //                             <span className="font-semibold text-green-600">₹{paymentAmount.toLocaleString()}</span>
-  //                           </div>
-  //                         )}
-  //                       </div>
-  //                     </div>
-  //                   )}
-  //                 </div>
-  //               );
-  //             })}
-  //           </div>
-  //         )}
-  //       </div>
-  //     </div>
-  //   );
-  // };
-
-  const BookingCard = ({
-    booking,
-    trip,
-    isCancelled,
-    showItinerary,
-    formatDate,
-    openCancelModal,
-    downloadItinerary,
-    toggleItinerary,
-    isCancellationRequested,
-  }) => {
-    // Safely check for cancellation status with fallbacks
-    const cancellationRequested = isCancellationRequested || false;
-    const cancelled = isCancelled || false;
-
-    return (
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="lg:flex">
-          <div className="lg:w-1/3 lg:h-115 relative lg:flex-shrink-0">
-            {/* Cancellation Requested Overlay */}
-            {cancellationRequested && !cancelled && (
-              <div className="absolute inset-0 bg-yellow-500 bg-opacity-90 z-10 flex items-center justify-center">
-                <div className="bg-white p-6 rounded-xl text-center m-4">
-                  <Clock size={32} className="text-yellow-600 mx-auto mb-3" />
-                  <h4 className="text-lg font-bold text-gray-800 mb-2">
-                    Cancellation Requested
-                  </h4>
-                  <p className="text-gray-600 mb-2 text-sm">
-                    Your cancellation request has been submitted and is waiting
-                    for admin approval. The admin will review your request and
-                    process it shortly.
-                  </p>
-                  {booking.payment?.potentialRefundAmount > 0 && (
-                    <p className="text-green-600 font-semibold text-sm mt-2">
-                      Potential refund: ₹{booking.payment.potentialRefundAmount}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {cancelled && (
-              <div className="absolute inset-0 bg-black bg-opacity-70 z-10 flex items-center justify-center">
-                <div className="bg-white p-6 rounded-xl text-center m-4">
-                  <X size={32} className="text-red-500 mx-auto mb-3" />
-                  <h4 className="text-lg font-bold text-gray-800 mb-2">
-                    Booking Cancelled
-                  </h4>
-                  <p className="text-gray-600 mb-4 text-sm">
-                    This booking has been successfully cancelled.
-                    {booking.payment?.refundAmount > 0 && (
-                      <span className="block text-green-600 font-semibold mt-1">
-                        Refund processed: ₹{booking.payment.refundAmount}
-                      </span>
                     )}
-                  </p>
-                </div>
-              </div>
-            )}
 
-            <img
-              src={
-                booking.image ||
-                (trip && trip.images && trip.images[0]) ||
-                TRIP_PLACEHOLDER
-              }
-              alt={booking.title || "Trip image"}
-              className="w-full h-64 lg:h-115 object-cover"
-            />
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-
-            <div className="absolute bottom-4 left-4 text-white">
-              <h3 className="text-xl font-bold mb-1">
-                {booking.title || "Trip Title"}
-              </h3>
-              <div className="flex items-center space-x-2 text-sm opacity-90">
-                <MapPin size={12} />
-                <span>{(trip && trip.state) || "Destination"}</span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`lg:w-2/3 p-6 ${
-              showItinerary ? "lg:overflow-y-auto lg:max-h-115" : ""
-            }`}
-          >
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <InfoCard
-                icon={<Clock size={16} className="text-blue-500 mb-1" />}
-                label="Duration"
-                value={booking.duration || "N/A"}
-              />
-
-              <InfoCard
-                icon={<Calendar size={16} className="text-blue-500 mb-1" />}
-                label="Travel Dates"
-                value={`${formatDate(booking.startDate)} - ${formatDate(
-                  booking.endDate
-                )}`}
-              />
-
-              <InfoCard
-                icon={<Users size={16} className="text-blue-500 mb-1" />}
-                label="Travelers"
-                value={`${booking.total_members || 0} ${
-                  booking.total_members === 1 ? "Person" : "People"
-                }`}
-              />
-
-              <InfoCard
-                icon={<Eye size={16} className="text-blue-500 mb-1" />}
-                label="Booking ID"
-                value={booking.tripId || "N/A"}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {(booking.adults > 0 ||
-                booking.childrens > 0 ||
-                booking.travelWithPet ||
-                booking.photographer) && (
-                <DetailCard
-                  title="Travelers Details"
-                  items={[
-                    booking.adults > 0 && `Adults: ${booking.adults}`,
-                    booking.childrens > 0 && `Children: ${booking.childrens}`,
-                    booking.travelWithPet && "Pet: Yes",
-                    booking.photographer && "Photographer: Yes",
-                  ].filter(Boolean)}
-                />
-              )}
-
-              <DetailCard
-                title="Payment Details"
-                customContent={
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl border border-green-200 flex items-center justify-between">
-                    <span className="text-lg font-medium text-gray-700">
-                      Total Amount
-                    </span>
-                    <span className="text-2xl font-bold text-green-600">
-                      ₹{booking?.payment?.grandTotal || "0"}
-                    </span>
-                  </div>
-                }
-              />
-
-              {booking.current_location && (
-                <DetailCard
-                  title="Pickup Location"
-                  customContent={
-                    <div className="flex items-center space-x-2 text-gray-700">
-                      <MapPin size={14} className="text-blue-500" />
-                      <span className="text-sm">
-                        {booking.current_location}
-                      </span>
+                    {/* Actions */}
+                    <div className="mt-5 sm:mt-6 flex flex-wrap gap-3">
+                      {!isCancelled && !isCancellationRequested && (
+                        <button
+                          onClick={() => openCancelModal(booking._id)}
+                          className="px-3 sm:px-4 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 text-sm font-semibold transition-colors"
+                        >
+                          Cancel Trip
+                        </button>
+                      )}
+                      {isCancellationRequested && (
+                        <span className="px-3 sm:px-4 py-2 bg-yellow-50 text-yellow-700 rounded-md text-sm font-semibold">
+                          Cancellation Requested
+                        </span>
+                      )}
+                      {isCancelled && (
+                        <span className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-semibold">
+                          Trip Cancelled
+                        </span>
+                      )}
                     </div>
-                  }
-                />
-              )}
-            </div>
-
-            {trip && trip.activities && trip.activities.length > 0 && (
-              <div className="mb-6">
-                <h4 className="font-semibold text-gray-800 mb-3">Activities</h4>
-                <div className="flex flex-wrap gap-2">
-                  {trip.activities.map((activity, index) => (
-                    <span
-                      key={index}
-                      className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium"
-                    >
-                      {activity}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-              {/* Action Buttons - Show only if not cancelled or cancellation requested */}
-              {!cancelled && !cancellationRequested && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <ActionButton
-                      onClick={() => openCancelModal(booking._id)}
-                      icon={<Trash2 size={14} />}
-                      label="Request Cancellation"
-                      color="red"
-                    />
-                    <ActionButton
-                      onClick={() => downloadItinerary(booking._id)}
-                      icon={<Download size={14} />}
-                      label="Download"
-                      color="blue"
-                    />
-                    <ActionButton
-                      onClick={() => toggleItinerary(booking._id)}
-                      icon={<Eye size={14} />}
-                      label={
-                        showItinerary ? "Hide Itinerary" : "View Itinerary"
-                      }
-                      color="purple"
-                    />
                   </div>
                 </div>
-              )}
-
-              {/* Show message if cancellation is requested */}
-              {cancellationRequested && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-4 w-full">
-                  <div className="flex items-center space-x-2 text-yellow-800">
-                    <Clock size={16} />
-                    <span className="font-medium">Cancellation Requested</span>
-                  </div>
-                  <p className="text-yellow-700 text-sm mt-1">
-                    Your cancellation request has been submitted and is waiting
-                    for admin approval. The admin will review your request and
-                    process it shortly.
-                  </p>
-                  {booking.payment?.potentialRefundAmount > 0 && (
-                    <p className="text-green-600 font-semibold text-sm mt-2">
-                      Potential refund: ₹{booking.payment.potentialRefundAmount}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {showItinerary && trip && trip.itinerary && (
-              <ItinerarySection itinerary={trip.itinerary} />
-            )}
+              );
+            })}
           </div>
-        </div>
-      </div>
-    );
-  };
-
-  const InfoCard = ({ icon, label, value }) => (
-    <div className="bg-gray-50 p-3 rounded-lg">
-      {icon}
-      <div className="text-xs text-gray-600">{label}</div>
-      <div className="font-semibold text-sm">{value}</div>
-    </div>
-  );
-
-  const DetailCard = ({ title, items, customContent }) => (
-    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-      <h4 className="font-semibold text-gray-800 mb-3">{title}</h4>
-      {customContent ? (
-        customContent
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {items.map((item, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full border border-gray-200"
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const ActionButton = ({ onClick, icon, label, color = "blue" }) => {
-    const colorClasses = {
-      red: "bg-red-500 hover:bg-red-600",
-      blue: "bg-blue-500 hover:bg-blue-600",
-      purple: "bg-purple-500 hover:bg-purple-600",
-      green: "bg-green-500 hover:bg-green-600",
-    };
-
-    return (
-      <button
-        onClick={onClick}
-        className={`${colorClasses[color]} text-white px-4 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 text-sm w-full`}
-      >
-        {icon}
-        <span>{label}</span>
-      </button>
-    );
-  };
-
-  const ItinerarySection = ({ itinerary }) => (
-    <div className="mt-6">
-      <h4 className="font-semibold text-gray-800 mb-4 text-lg">
-        Trip Itinerary
-      </h4>
-
-      <div className="block lg:hidden space-y-4">
-        {itinerary.map((day, index) => (
-          <div
-            key={index}
-            className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border-l-4 border-blue-500"
-          >
-            <div className="mb-2">
-              <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                Day {day.dayNumber}
-              </span>
-            </div>
-            <h5 className="font-medium text-gray-800">{day.title}</h5>
-            <p className="text-sm text-gray-700 mt-1">{day.description}</p>
-            {day.points?.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {day.points.map((point, i) => (
-                  <li key={i} className="flex items-start">
-                    <span className="text-blue-500 mr-2">•</span>
-                    <span className="text-sm text-gray-700">{point}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="hidden lg:block">
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
-            <h5 className="text-white font-semibold text-base">
-              Day-wise Schedule
-            </h5>
-          </div>
-
-          <div className="divide-y divide-gray-100">
-            {itinerary.map((day, index) => (
-              <div
-                key={index}
-                className="flex items-start p-6 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex-shrink-0 mr-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-sm">
-                      D{day.dayNumber}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="mb-2">
-                    <h6 className="text-lg font-semibold text-gray-900">
-                      {day.title}
-                    </h6>
-                  </div>
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    {day.description}
-                  </p>
-                  {day.points?.length > 0 && (
-                    <ul className="mt-2 space-y-1">
-                      {day.points.map((point, i) => (
-                        <li key={i} className="flex items-start">
-                          <span className="text-blue-500 mr-2">•</span>
-                          <span className="text-sm text-gray-700">{point}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
+};
 
   const HistoryPage = () => {
     // Filter completed bookings - they already include tripDetails

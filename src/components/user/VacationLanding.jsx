@@ -169,7 +169,7 @@ import { MapPin, Brain, Home, Camera } from 'lucide-react';
 
 export default function VacationLanding() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#eff5d2]">
       {/* Top Section */}
       <div className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8 items-center">
