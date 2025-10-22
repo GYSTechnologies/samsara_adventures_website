@@ -178,7 +178,7 @@ export default function EventHistoryPage() {
   }
 
   return (
-    <div className="">
+    <div className="pb-20">
       {/* Tabs */}
       <div className="px-2 sm:px-4 lg:px-8 pt-6 sm:pt-8">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 border border-white/20 shadow-lg">

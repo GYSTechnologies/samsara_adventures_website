@@ -226,20 +226,35 @@ const DetailPage = () => {
     }
   };
 
-  // VALIDATED submit
   const handleSubmit = () => {
-    // const { valid, errors: nextErrors } = validateForm(formData);
-    // setErrors(nextErrors); 
-
-    // if (!valid) {
-    //   toast.error("Please fix the highlighted fields");
-    //   return;
-    // }
-
-    navigate(`/payment/${tripId}`, {
-      state: { bookingData: { ...formData, tripId }, tripDetails: tripData },
+  // Check if user is authenticated
+  if (!isAuthenticated || !user) {
+    toast.info("Please login to continue booking");
+    // Save current trip details to navigate back after login
+    navigate("/login", {
+      state: {
+        from: `/details/${tripId}`,
+        bookingData: { ...formData, tripId },
+        tripDetails: tripData,
+      },
     });
-  };
+    return;
+  }
+
+
+  // Navigate to payment
+  navigate(`/payment/${tripId}`, {
+    state: { bookingData: { ...formData, tripId }, tripDetails: tripData },
+  });
+};
+
+  // VALIDATED submit
+  // const handleSubmit = () => {
+
+  //   navigate(`/payment/${tripId}`, {
+  //     state: { bookingData: { ...formData, tripId }, tripDetails: tripData },
+  //   });
+  // };
 
   // Derived
   if (loading) return <LoadingState />;
@@ -271,7 +286,7 @@ const DetailPage = () => {
               {price}
             </div>
           </div>
-
+  
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
@@ -299,10 +314,18 @@ const DetailPage = () => {
               </button>
             </div>
           </div>
+           <div className="flex justify-end items-end bg-white border-t border-gray-200 p-4">
+          <button
+            onClick={handleSubmit}
+            className="w-[150px]  bg-lime-700 hover:bg-lime-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
+          >
+            Book Now
+          </button>
+        </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 gap-6">
+          <div className="">
             <TabNavigation
               activeTab={activeTab}
               onTabChange={setActiveTab}
@@ -341,7 +364,7 @@ const DetailPage = () => {
             )}
           </div>
 
-          <div className="lg:col-span-1">
+          {/* <div className="lg:col-span-1">
             <div className="sticky top-24">
               <ContactInfoForm
                 formData={formData}
@@ -353,7 +376,7 @@ const DetailPage = () => {
                 errors={errors}
               />
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -364,6 +387,7 @@ const DetailPage = () => {
           <div className="absolute top-6 right-6 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
             {price} / {tripData.duration}
           </div>
+       
         </div>
 
         <div className="bg-white mt-4 rounded-t-3xl">

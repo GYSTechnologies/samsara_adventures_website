@@ -1,19 +1,34 @@
 // components/nav/BottomNav.jsx
 import React, { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Home, CalendarDays, Heart, User, Search } from "lucide-react";
 import SearchModal from "./SearchModal";
 
 export default function BottomNav() {
   const navigate = useNavigate();
+  const location = useLocation(); // For checking current pathname for active state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
+  // Simple token check from localStorage
+  const hasToken = !!localStorage.getItem("token");
 
   const items = [
     { to: "/", label: "Home", icon: Home },
     { to: "/event", label: "Events", icon: CalendarDays },
     { to: "/favorites", label: "Saved", icon: Heart },
-    { to: "/profile", label: "Profile", icon: User },
   ];
+
+  const handleProfileClick = () => {
+    if (hasToken) {
+      navigate("/profile");
+    } else {
+      navigate("/login");
+    }
+  };
+
+  // Active state for profile/login: true if on /profile (with token) or /login (no token)
+  const isProfileActive = (hasToken && location.pathname === "/profile") || 
+                          (!hasToken && location.pathname === "/login");
 
   return (
     <>
@@ -59,6 +74,21 @@ export default function BottomNav() {
                   )}
                 </NavLink>
               ))}
+              
+              {/* Profile/Login Item: Conditional Button */}
+              <button
+                onClick={handleProfileClick}
+                className={`flex flex-col items-center justify-center text-xs py-1 transition-colors ${
+                  "text-gray-200 hover:text-lime-400"
+                } ${isProfileActive ? "text-lime-400" : ""}`}
+                aria-label={hasToken ? "Profile" : "Sign In"}
+              >
+                <User 
+                  size={20} 
+                  className={isProfileActive ? "text-lime-400" : "text-gray-200"} 
+                />
+                <span className="mt-0.5">{hasToken ? "Profile" : "Login"}</span>
+              </button>
             </div>
           </div>
         </div>

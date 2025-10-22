@@ -252,7 +252,7 @@ const DestinationDetailPage = () => {
   }
 
   return (
-    <div className="pt-14 bg-[#eff5d2]">
+    <div className="py-14 md:py-0   bg-[#eff5d2]">
       {/* Header */}
       <div className={getHeaderBg()}>
         {/* Backgrounds and header content */}

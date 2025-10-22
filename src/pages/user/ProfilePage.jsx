@@ -21,9 +21,11 @@ import {
   Loader2,
   Calendar as Event,
 } from "lucide-react";
+import { LogOut } from "lucide-react"
 import axiosInstance from "../../api/axiosInstance";
 import EventHistoryPage from "../../components/user/EventHistory";
 import { CancelBookingModal } from "../../components/user/CancelBookingModal";
+import CustomizedPlansPage from "./CustomizedPlansPage";
 // Constants
 const PROFILE_PLACEHOLDER =
   "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=face";
@@ -38,7 +40,6 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [cancellationRequests, setCancellationRequests] = useState();
   // User data
   const [profileData, setProfileData] = useState({
     firstName: "",
@@ -65,10 +66,12 @@ const ProfilePage = () => {
   const navItems = [
     { id: "profile", label: "Profile", icon: <User size={18} /> },
     { id: "plans", label: "Plans", icon: <Calendar size={18} /> },
+    {id:'customized-plans', label: 'Customized Plans', icon: <MapPin size={18} />},
     { id: "history", label: "History", icon: <Clock size={18} /> },
     { id: "terms", label: "Terms", icon: <Settings size={18} /> },
     { id: "help", label: "Help", icon: <HelpCircle size={18} /> },
     { id: "event-history", label: "Event-History", icon: <Event size={18} /> },
+    { id: "logout", label: "Logout", icon: <LogOut size={18} /> },
   ];
 
   // FAQ data
@@ -821,7 +824,7 @@ const PlansPage = () => {
   const bookingDetails = bookings?.find((b) => b._id === cancelTripId) || null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen mb-10 bg-gray-50">
       {/* Modal */}
       {showCancelModal && (
         <CancelBookingModal
@@ -1341,6 +1344,13 @@ const PlansPage = () => {
     </div>
   );
 
+  const logout = () => {
+    // Clear user session (e.g., remove token from localStorage)
+    localStorage.removeItem("token");
+    // Redirect to login page
+    window.location.href = "/login";
+  };
+
   const SupportContactSection = () => (
     <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-8 text-white">
       <div className="max-w-4xl mx-auto">
@@ -1495,6 +1505,8 @@ const PlansPage = () => {
         return <ProfilePageComponent />;
       case "plans":
         return <PlansPage />;
+      case "customized-plans":
+        return <CustomizedPlansPage/>;
       case "history":
         return <HistoryPage />;
       case "event-history":
@@ -1503,6 +1515,9 @@ const PlansPage = () => {
         return <TermsPage />;
       case "help":
         return <HelpPage />;
+      case "logout":
+        logout();
+        return null;
       default:
         return <ProfilePageComponent />;
     }

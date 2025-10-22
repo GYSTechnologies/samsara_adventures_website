@@ -45,6 +45,9 @@ import Events from "../pages/user/Event.jsx";
 import EventDetailPage from "../components/user/EventDetailPage.jsx";
 import ScrollToTop from "../components/user/ScrollToTop.jsx";
 import BottomNav from "../components/user/BottomNav.jsx";
+import CustomItineraryPayment from "../pages/user/CustomItineraryPayment.jsx";
+import AdminVectorImage from "../pages/admin/AdminVectorImage.jsx";
+import AdminCategories from "../pages/admin/AdminCategories.jsx";
 
 const AppContent = () => {
   const location = useLocation();
@@ -77,7 +80,7 @@ const AppContent = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
+        <Route path="/custom-itinerary-payment" element={<CustomItineraryPayment />} />
         {/* ================= Admin Auth Routes ================= */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/signup" element={<AdminSignup />} />
@@ -90,6 +93,8 @@ const AppContent = () => {
           <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/passengers" element={<AdminPassengers />} />
           <Route path="/admin/enquiries" element={<AdminEnquiries />} />
+          <Route path="/admin/vector-image" element={<AdminVectorImage />} />
+          <Route path="/admin/categories" element={<AdminCategories />} />
           <Route path="/admin/profile" element={<AdminProfile />} />
         </Route>
 
