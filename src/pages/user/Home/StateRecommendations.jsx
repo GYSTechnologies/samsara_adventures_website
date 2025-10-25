@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Heart, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import axiosInstance from "../../../api/axiosInstance";
+import { useAuth } from "../../../context/AuthContext";
 
 const fallbackImg =
   "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80";
@@ -14,12 +17,14 @@ const formatINR = (n) =>
         maximumFractionDigits: 0,
       }).format(Number(n));
 
-export default function StateRecommendations({ state = "", email = "" }) {
+export default function StateRecommendations({ state = "" }) {
   const [items, setItems] = useState([]);
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
   const scrollerRef = useRef(null);
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const load = async () => {
@@ -27,7 +32,12 @@ export default function StateRecommendations({ state = "", email = "" }) {
         setLoading(true);
         setErr(null);
         const res = await axiosInstance.get("/api/trip/getHomeStateTrips", {
-          params: { page: 1, limit: 10, state, email },
+          params: { 
+            page: 1, 
+            limit: 10, 
+            state, 
+            email: user?.email || "" 
+          },
         });
         const raw = res?.data?.data ?? res?.data?.trips ?? [];
         const normalized = raw.map((t, i) => ({
@@ -51,7 +61,46 @@ export default function StateRecommendations({ state = "", email = "" }) {
       }
     };
     load();
-  }, [state, email]);
+  }, [state, user?.email]);
+
+  // Toggle favorite function
+  const toggleFavorite = async (tripId, currentFavoriteStatus) => {
+    if (!isAuthenticated || !user) {
+      toast.info("Please login to add favorites");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const newFavoriteStatus = !currentFavoriteStatus;
+
+      // Optimistic update
+      setItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === tripId ? { ...item, isFavorite: newFavoriteStatus } : item
+        )
+      );
+
+      await axiosInstance.post("/api/user/toggleFavorite", {
+        tripId,
+        email: user.email,
+        isFavorite: newFavoriteStatus,
+      });
+
+      toast.success(
+        newFavoriteStatus ? "Added to favorites!" : "Removed from favorites"
+      );
+    } catch (error) {
+      console.error("Favorite toggle error:", error);
+      // Revert on error
+      setItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === tripId ? { ...item, isFavorite: currentFavoriteStatus } : item
+        )
+      );
+      toast.error("Failed to update favorite status");
+    }
+  };
 
   // Active card by center
   useEffect(() => {
@@ -76,7 +125,7 @@ export default function StateRecommendations({ state = "", email = "" }) {
     el.addEventListener("scroll", onScroll, { passive: true });
     requestAnimationFrame(onScroll);
     return () => el.removeEventListener("scroll", onScroll);
-  }, [items.length]); 
+  }, [items.length]);
 
   // Optional: turn vertical wheel into horizontal on desktop
   useEffect(() => {
@@ -93,13 +142,7 @@ export default function StateRecommendations({ state = "", email = "" }) {
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, []); 
-
-  // Debug once: confirm overflow exists
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (el) console.log("carousel widths:", { scrollWidth: el.scrollWidth, clientWidth: el.clientWidth });
-  }, [items.length]); 
+  }, []);
 
   const onExplore = (it) => {
     window.location.href = `/detail-page/${encodeURIComponent(it.id)}`;
@@ -136,18 +179,13 @@ export default function StateRecommendations({ state = "", email = "" }) {
         </div>
       </section>
     );
-  } 
+  }
 
   if (!items.length) return null;
 
   return (
     <section className="bg-[#eef5d2] py-6 sm:py-8 md:py-10">
       <div className="max-w-6xl mx-auto px-4">
-        <h2 className="text-[clamp(20px,3.5vw,40px)] font-extrabold text-gray-900 mb-4 sm:mb-6 md:mb-8">
-          Recommendations for You
-        </h2>
-
-        {/* Grid conveyor scroller */}
         <div className="relative">
           <div
             ref={scrollerRef}
@@ -192,22 +230,33 @@ export default function StateRecommendations({ state = "", email = "" }) {
                     <img
                       src={it.image}
                       alt={it.title}
-                      onError={(e) => { e.currentTarget.src = fallbackImg; }}
+                      onError={(e) => {
+                        e.currentTarget.src = fallbackImg;
+                      }}
                       className="absolute inset-0 w-full h-full object-cover"
                       sizes="(max-width: 640px) 70vw, (max-width: 1024px) 40vw, 360px"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
-                    <div className="absolute top-3 sm:top-4 left-3 sm:left-4">
+                    <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20">
                       <button
-                        className="h-8 w-8 sm:h-9 sm:w-9 grid place-items-center rounded-full bg-white/80 hover:bg-white shadow"
-                        aria-label="Save"
-                        onClick={(e) => e.stopPropagation()}
+                        type="button"
+                        className="h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                        aria-label={it.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleFavorite(it.id, it.isFavorite);
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
                       >
                         <Heart
                           size={18}
-                          className={it.isFavorite ? "text-rose-500" : "text-gray-700"}
+                          className={`transition-colors pointer-events-none ${
+                            it.isFavorite ? "text-rose-500" : "text-gray-700"
+                          }`}
                           fill={it.isFavorite ? "#ef4444" : "none"}
+                          strokeWidth={2}
                         />
                       </button>
                     </div>

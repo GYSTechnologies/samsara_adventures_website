@@ -29,9 +29,9 @@ const Card = ({ d }) => (
           {d.title}
         </h3>
         <div className="mt-2 flex items-center gap-2 flex-wrap">
-          {/* <span className="px-2 py-1 rounded-full bg-white/20 text-xs border border-white/30">
-            {d.tag}
-          </span> */}
+          <span className="px-2 py-1 rounded-full bg-white/20 text-xs border border-white/30">
+            {d.state || d.location}
+          </span>
           <span className="inline-flex items-center gap-1 text-xs opacity-90">
             <Clock size={12} />
             {d.duration}
