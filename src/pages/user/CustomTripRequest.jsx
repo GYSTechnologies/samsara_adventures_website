@@ -391,7 +391,7 @@ const CustomTripRequest = ({
       }
     } catch (error) {
       console.error("Custom date request error:", error);
-      toast.error(error.response?.data?.message || "Failed to submit custom date request");
+      toast.error(error.response?.data?.error || "Failed to submit custom date request");
     } finally {
       setLoading(false);
     }
@@ -1041,7 +1041,7 @@ const CustomTripRequest = ({
         onNavigateHome={handleNavigateHome}
         onNavigateToPlans={handleNavigateToPlans}
         bookingId={bookingId}
-        isCustomRequest={!isPaymentFlow}
+        isCustomRequest={selectedBatch === 'custom'}
       />
     </div>
   );

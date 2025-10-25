@@ -30,12 +30,7 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
   const [childrenCount, setChildrenCount] = useState(0);
   const [passengers, setPassengers] = useState([]);
   const [passengerErrors, setPassengerErrors] = useState([]);
-  const [selectedAddOns, setSelectedAddOns] = useState({
-    pet: false,
-    decoration: false,
-    photographer: false,
-    translator: false,
-  });
+
   const [contactInfo, setContactInfo] = useState({
     email: "",
     phone: "",
@@ -85,16 +80,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
     if (bookingData) {
       setAdultsCount(bookingData.adults || 1);
       setChildrenCount(bookingData.children || bookingData.childrens || 0);
-      
-      // Initialize add-ons from bookingData
-      if (bookingData.addOnServices && typeof bookingData.addOnServices === 'object') {
-        setSelectedAddOns({
-          pet: bookingData.addOnServices.pet || false,
-          decoration: bookingData.addOnServices.decoration || false,
-          photographer: bookingData.addOnServices.photographer || false,
-          translator: bookingData.addOnServices.translator || false,
-        });
-      }
     }
   }, [bookingData]);
 
@@ -148,21 +133,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
     return errs.every((x) => !x.name && !x.age);
   };
 
-  // Add-on services configuration
-  const addOnOptions = [
-    { id: "pet", label: "Bringing a pet?", icon: PawPrint },
-    { id: "decoration", label: "Custom Decoration?", icon: PartyPopper },
-    { id: "photographer", label: "Personal Photographer?", icon: Camera },
-    { id: "translator", label: "Need a Translator?", icon: Languages },
-  ];
-
-  // Toggle add-on service
-  const toggleAddOn = (addOnId) => {
-    setSelectedAddOns((prev) => ({
-      ...prev,
-      [addOnId]: !prev[addOnId],
-    }));
-  };
 
   const calculatePrices = () => {
     const totalPersons = adultsCount + childrenCount;
@@ -242,8 +212,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
           theme: { color: "#65a30d" },
           handler: async (paymentResponse) => {
             try {
-              console.log("✅ Payment successful, preparing verification data...");
-
               // Prepare complete booking data matching backend structure
               const verificationData = {
                 razorpay_order_id: paymentResponse.razorpay_order_id,
@@ -273,7 +241,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
                   
                   // Special requests and add-ons
                   specialRequests: bookingData?.specialRequests || "",
-                  addOnServices: selectedAddOns,
                   
                   // Trip details
                   title: title,
@@ -584,48 +551,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
             </div>
           </div>
 
-          {/* Add-on Services */}
-          <div className="bg-white rounded-2xl shadow-lg p-4">
-            <h2 className="text-base font-semibold text-lime-900 mb-4">Add-on Services</h2>
-            <div className="space-y-3">
-              {addOnOptions.map((option) => {
-                const Icon = option.icon;
-                const isSelected = selectedAddOns[option.id];
-                return (
-                  <div key={option.id} className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-5 h-5 text-lime-600" />
-                      <span className="text-sm font-medium text-lime-900">{option.label}</span>
-                    </div>
-                    <button
-                      onClick={() => toggleAddOn(option.id)}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
-                        isSelected ? "bg-lime-600 text-white" : "bg-lime-50 text-lime-600 border border-lime-200 hover:bg-lime-100"
-                      }`}
-                    >
-                      {isSelected ? "Added" : "Add"}
-                    </button>
-                  </div>
-                );
-              })}
-
-              {bookingData?.specialRequests && (
-                <div className="pt-2">
-                  <label className="block text-xs text-lime-700 mb-1.5 font-medium">Special Requests</label>
-                  <div className="relative">
-                    <Edit3 className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                    <textarea
-                      value={bookingData.specialRequests}
-                      readOnly
-                      rows={3}
-                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none bg-gray-50"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Travelers */}
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="px-4 py-3 bg-[#f0f2d9] border-b border-lime-200">
@@ -758,7 +683,7 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
         onNavigateHome={handleNavigateHome}
         onNavigateToPlans={handleNavigateToPlans}
         bookingId={bookingId}
-        isCustomRequest={false}
+        isCustomRequest={true}
       />
     </div>
   );

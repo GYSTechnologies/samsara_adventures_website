@@ -207,7 +207,7 @@ const DetailPage = () => {
       ),
     }));
 
-  const toggleFavorite = async () => {
+  const toggleFavorite = async (tripId, email, isFavorite) => {
     if (!isAuthenticated) return navigate("/login");
     try {
       const newFavoriteStatus = !isFavorite;
@@ -302,7 +302,10 @@ const DetailPage = () => {
                 )}
               </div>
               <button
-                onClick={toggleFavorite}
+                onClick={(e) => {
+                   e.preventDefault();
+                  e.stopPropagation();
+                  toggleFavorite(tripId, user?.email, isFavorite)}}
                 className="p-2 rounded-full bg-white hover:bg-gray-100 shadow-md"
               >
                 <Heart
