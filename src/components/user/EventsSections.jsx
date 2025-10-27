@@ -67,7 +67,7 @@ export default function EventsSections() {
     
     return (
       <div
-        className={`group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
+        className={`group  relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
           isMobile ? "min-w-[280px] mx-1 h-64" : "flex-none w-70 h-64"
         }`}
         onClick={() => handleViewDetails(event._id || event.id)}
@@ -136,7 +136,7 @@ export default function EventsSections() {
 
   return (
     <div className="bg-[#eff5d2] ">
-      <div className="container mx-auto px-1">
+      <div className="max-w-6xl mx-auto px-4  ">
         
         {/* Popular Events Section */}
         <section>

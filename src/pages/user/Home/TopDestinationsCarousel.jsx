@@ -108,7 +108,7 @@ const HorizontalScroller = ({ items, title }) => {
   if (!items?.length) return null;
 
   return (
-    <section className=" p-1 bg-[#eff5d2] ">
+    <section className=" p-1 bg-[#eff5d2] max-w-6xl mx-auto px-4 ">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
           {title}

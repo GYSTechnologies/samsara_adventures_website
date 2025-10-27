@@ -84,11 +84,11 @@ const VectorStates = () => {
   return (
     <div className="py-4 sm:py-6 lg:py-8 bg-[#eef5d2]">
       <div className="">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-lime-900 text-center md:text-left mb-2 sm:mb-4 lg:mb-6">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-lime-900 text-center  mb-2 sm:mb-4 lg:mb-6">
           State's
         </h2>
       </div>
-      <div className="max-w-5xl mx-auto px-2">
+      <div className="max-w-6xl mx-auto px-2">
         {/* Horizontal scroller with snap and hidden scrollbar */}
         <div
           className="flex gap-4 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-px-4 no-scrollbar"
