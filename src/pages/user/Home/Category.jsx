@@ -30,7 +30,6 @@ function Category() {
             <div className="relative">
               {/* Glowing border wrapper */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-lime-400 via-lime-500 to-lime-500 rounded-full opacity-25 blur-sm group-hover:opacity-100 transition duration-300 animate-pulse"></div>
-              
               {/* Image */}
               <img
                 src={category.image}
