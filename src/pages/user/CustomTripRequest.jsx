@@ -83,7 +83,6 @@ const StatusModal = ({ open, onClose, status, message, enquiryId, isPaid, onGoTo
   );
 };
 
-
 const CustomTripRequest = ({
   tripId,
   bookingData,
@@ -103,6 +102,9 @@ const CustomTripRequest = ({
   const [childrenCount, setChildrenCount] = useState(0);
   const [passengers, setPassengers] = useState([]);
   const [passengerErrors, setPassengerErrors] = useState([]);
+
+  // ADD THIS: Available seats state
+  const [availableSeats, setAvailableSeats] = useState(null);
 
   // Custom date (only start date)
   const [customStartDate, setCustomStartDate] = useState("");
@@ -157,6 +159,13 @@ const CustomTripRequest = ({
   const effectivePayment = customItineraryData?.payment || originalPayment;
   const effectiveItinerary = customItineraryData?.itinerary || originalItinerary;
 
+  // ADD THIS: Get available seats from tripDetails
+  useEffect(() => {
+    if (tripDetails?.availableSeats !== undefined) {
+      setAvailableSeats(tripDetails.availableSeats);
+    }
+  }, [tripDetails]);
+
   // Initial adults/children (runs on deps)
   useEffect(() => {
     setAdultsCount(initialAdults);
@@ -194,7 +203,7 @@ const CustomTripRequest = ({
     }));
     setPassengers(newPassengers);
     setPassengerErrors(newPassengers.map(() => ({ name: "", age: "" })));
-  }, [totalTravelers, user?.name, fullName]); // Added deps for name init
+  }, [totalTravelers, user?.name, fullName]);
 
   const setPassengerField = (index, field, value) => {
     setPassengers((prev) => {
@@ -268,10 +277,10 @@ const CustomTripRequest = ({
 
   // Toggle function with console.log for debugging (remove in production)
   const toggleAddOn = (addOnId) => {
-    console.log("Toggling add-on:", addOnId, "Current state:", selectedAddOns); // Debug log
+    console.log("Toggling add-on:", addOnId, "Current state:", selectedAddOns);
     setSelectedAddOns((prev) => {
       const newState = { ...prev, [addOnId]: !prev[addOnId] };
-      console.log("New state:", newState); // Debug log
+      console.log("New state:", newState);
       return newState;
     });
   };
@@ -297,13 +306,12 @@ const CustomTripRequest = ({
           isPaid: !!isPaid,
         });
         setStatusModalOpen(true);
-        setAllowSubmitAfterStatus(false); // Block until user chooses
+        setAllowSubmitAfterStatus(false);
       } else {
-        // NEW_USER — allow submit
         setAllowSubmitAfterStatus(true);
       }
     } catch (err) {
-      console.error("Status check error:", err); // Allow proceed on error
+      console.error("Status check error:", err);
       setAllowSubmitAfterStatus(true);
     } finally {
       setLoading(false);
@@ -329,7 +337,6 @@ const CustomTripRequest = ({
       toast.error(dateError || "Please select a valid start date");
       return;
     }
-    // If user just switched to custom, ensure either NEW_USER or they chose to proceed
     if (!allowSubmitAfterStatus) {
       setStatusModalOpen(true);
       return;
@@ -339,7 +346,6 @@ const CustomTripRequest = ({
     try {
       const pickupLocationValue = currentLocation || pickupDropLocation || "";
       const requestData = {
-        // Required fields (backend expects these names)
         email: user?.email || email,
         phone: user?.phoneNumber || phone,
         tripId: tripId,
@@ -347,35 +353,23 @@ const CustomTripRequest = ({
         adults: adultsCount,
         current_location: pickupLocationValue,
         persons: passengers,
-
-        // Optional
         fullName: user?.name || fullName,
         childrens: childrenCount,
-
-        // Trip details passthrough
         title: title,
         endDate: endDate,
         image: images?.[0],
         duration: duration,
-
-        // Add-ons as booleans (!! ensures true/false, backend forces === true)
         travelWithPet: !!selectedAddOns.pet,
         decoration: !!selectedAddOns.decoration,
         photographer: !!selectedAddOns.photographer,
         translator: !!selectedAddOns.translator,
-
-        // Notes
         specialRequests: specialRequests,
         iteneraryChanges: itineraryChanges,
-
-        // Help backend fallback
         pickupLocation: pickupLocationValue,
-
-        // Status
         isPaymentPending: true,
       };
 
-      console.log("Submitting requestData:", requestData); // Debug log
+      console.log("Submitting requestData:", requestData);
 
       const response = await axiosInstance.post(
         "/api/custom-trip/submit-custom-request",
@@ -397,7 +391,6 @@ const CustomTripRequest = ({
     }
   };
 
-  // UPDATED: Handle Scheduled Batch Payment — Aligned with backend verifyPayment expectations
   const handleScheduledBatchPayment = async () => {
     if (!validatePassengers()) {
       toast.error("Please fill in all passenger details correctly");
@@ -437,47 +430,31 @@ const CustomTripRequest = ({
                 razorpay_payment_id: paymentResponse.razorpay_payment_id,
                 razorpay_signature: paymentResponse.razorpay_signature,
                 bookingData: {
-                  // Core booking info (backend expects email, phone, etc.)
                   email: user?.email || email,
-                  phone: user?.phoneNumber || phone, // Backend uses bookingData.phone
-                  fullName: user?.name || fullName, // Backend uses bookingData.fullName || bookingData.name
-                  // Trip ID for seat check (backend: { tripId: bookingData.tripId })
+                  phone: user?.phoneNumber || phone,
+                  fullName: user?.name || fullName,
                   tripId: tripId,
-
-                  // Persons array (backend expects bookingData.persons)
                   persons: passengers,
-
-                  // Passenger counts (backend calculates total_members from adults + children/childrens)
                   adults: adultsCount,
-                  children: childrenCount, // Backend handles both 'children' and 'childrens'
-
-                  // Location fields (backend expects: pickupAndDrop for pickupLocation, current_location from pickupLocation || current_location)
-                  pickupAndDrop: pickupDropLocation, // Maps to backend's pickupLocation: bookingData.pickupAndDrop
-                  current_location: currentLocation, // Already sent, backend falls back to this
-                  pickupLocation: pickupDropLocation, // Additional fallback for backend's current_location
-
-                  // Special requests
+                  children: childrenCount,
+                  pickupAndDrop: pickupDropLocation,
+                  current_location: currentLocation,
+                  pickupLocation: pickupDropLocation,
                   specialRequests,
-
-                  // Trip details (backend pulls from tripDetails for title, duration, dates, image, etc.)
                   tripDetails: {
                     title,
                     duration,
                     startDate,
                     endDate,
-                    images: images || [], // Backend: bookingData.tripDetails?.images?.[0]
-                    payment: effectivePayment, // Backend pulls subTotal, taxation, etc. from here
-                    tripType: "PACKAGE", // FIXED: Set to "PACKAGE" for scheduled (backend defaults to this if missing)
-                    pickupDropLocation, // Available for backend reference
+                    images: images || [],
+                    payment: effectivePayment,
+                    tripType: "PACKAGE",
+                    pickupDropLocation,
                     itinerary: effectiveItinerary,
                     state: tripState,
                     category,
                   },
-
-                  // Total amount (backend uses bookingData.totalAmount for grandTotal)
                   totalAmount: total,
-
-                  // Payment details (backend merges these with tripDetails.payment)
                   paymentDetails: {
                     subtotal: base,
                     taxation: taxes,
@@ -489,13 +466,10 @@ const CustomTripRequest = ({
                     paymentMethod: "Razorpay",
                     paymentStatus: "SUCCESS",
                   },
-
-                  // Status (backend sets requestStatus: "PAID", isPaymentPending: false)
                   selectedBatch: "scheduled",
                   bookingStatus: "CONFIRMED",
                   bookingDate: new Date().toISOString(),
-
-                  enquiryId: null, // Explicitly null to ensure regular flow (no update, creates new Booking)
+                  enquiryId: null,
                 },
               };
 
@@ -575,7 +549,6 @@ const CustomTripRequest = ({
 
   return (
     <div className="min-h-screen bg-[#f0f2d9] md:pt-20 pb-20 md:pb-8">
-      {/* Status popup: only for custom-date flow */}
       {!isPaymentFlow && (
         <StatusModal
           open={statusModalOpen}
@@ -697,8 +670,18 @@ const CustomTripRequest = ({
               </div>
             </div>
 
-            {/* Travelers Counter */}
+            {/* UPDATED: Travelers Counter with Available Seats Validation */}
             <div className="border-t border-gray-100 px-4 py-3">
+              {/* Show available seats warning if seats are limited */}
+              {availableSeats !== null && availableSeats <= 10 && (
+                <div className="mb-3 bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start gap-2">
+                  <Info className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-orange-700">
+                    <span className="font-semibold">Only {availableSeats} seats remaining</span> for this trip!
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -715,7 +698,18 @@ const CustomTripRequest = ({
                     </button>
                     <span className="font-semibold text-lime-900 w-8 text-center">{adultsCount}</span>
                     <button
-                      onClick={() => setAdultsCount(adultsCount + 1)}
+                      onClick={() => {
+                        const newTotal = adultsCount + 1 + childrenCount;
+                        if (availableSeats !== null && newTotal > availableSeats) {
+                          toast.error(`Only ${availableSeats} seats available for this trip!`);
+                          return;
+                        }
+                        if (adultsCount >= 10) {
+                          toast.error("Maximum 10 adults allowed");
+                          return;
+                        }
+                        setAdultsCount(adultsCount + 1);
+                      }}
                       disabled={adultsCount >= 10}
                       className="w-8 h-8 rounded-full bg-lime-600 text-white flex items-center justify-center hover:bg-lime-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -739,13 +733,39 @@ const CustomTripRequest = ({
                     </button>
                     <span className="font-semibold text-lime-900 w-8 text-center">{childrenCount}</span>
                     <button
-                      onClick={() => setChildrenCount(childrenCount + 1)}
+                      onClick={() => {
+                        const newTotal = adultsCount + childrenCount + 1;
+                        if (availableSeats !== null && newTotal > availableSeats) {
+                          toast.error(`Only ${availableSeats} seats available for this trip!`);
+                          return;
+                        }
+                        if (childrenCount >= 10) {
+                          toast.error("Maximum 10 children allowed");
+                          return;
+                        }
+                        setChildrenCount(childrenCount + 1);
+                      }}
                       disabled={childrenCount >= 10}
                       className="w-8 h-8 rounded-full bg-lime-600 text-white flex items-center justify-center hover:bg-lime-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       +
                     </button>
                   </div>
+                </div>
+
+                {/* Show total travelers count and remaining seats */}
+                <div className="pt-2 border-t border-lime-100">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-lime-900">Total Travelers</span>
+                    <span className="font-semibold text-lime-700">
+                      {totalTravelers} {totalTravelers === 1 ? 'person' : 'people'}
+                    </span>
+                  </div>
+                  {availableSeats !== null && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      {Math.max(0, availableSeats - totalTravelers)} seats remaining
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -857,12 +877,12 @@ const CustomTripRequest = ({
             </div>
           </div>
 
-          {/* Add-ons + Itinerary Changes — Now toggles work reliably */}
+          {/* Add-ons + Itinerary Changes */}
           <div className="bg-white rounded-2xl shadow-lg p-4">
             <div className="space-y-3">
               {addOnOptions.map((option) => {
                 const Icon = option.icon;
-                const isSelected = !!selectedAddOns[option.id]; // Force boolean for safety
+                const isSelected = !!selectedAddOns[option.id];
                 return (
                   <div key={option.id} className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-3">
