@@ -28,9 +28,6 @@ const Card = ({ d }) => (
           {d.title}
         </h3>
         <div className="mt-2 flex items-center gap-2 flex-wrap">
-          <span className="px-2 py-1 rounded-full bg-white/20 text-xs border border-white/30">
-            {d.tag}
-          </span>
           <span className="inline-flex items-center gap-1 text-xs opacity-90">
             <Clock size={12} />
             {d.duration}
@@ -107,7 +104,7 @@ const HorizontalScroller = ({ items, title }) => {
   if (!items?.length) return null;
 
   return (
-    <section className="p-1 bg-[#eff5d2] ">
+    <section className="p-1 bg-[#eff5d2] max-w-6xl mx-auto px-4 ">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
           {title}

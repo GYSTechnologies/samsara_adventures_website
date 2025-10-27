@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Heart, Clock } from "lucide-react";
+import { Heart, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axiosInstance from "../../../api/axiosInstance";
@@ -32,11 +32,11 @@ export default function StateRecommendations({ state = "" }) {
         setLoading(true);
         setErr(null);
         const res = await axiosInstance.get("/api/trip/getHomeStateTrips", {
-          params: { 
-            page: 1, 
-            limit: 10, 
-            state, 
-            email: user?.email || "" 
+          params: {
+            page: 1,
+            limit: 10,
+            state,
+            email: user?.email || "",
           },
         });
         const raw = res?.data?.data ?? res?.data?.trips ?? [];
@@ -63,7 +63,6 @@ export default function StateRecommendations({ state = "" }) {
     load();
   }, [state, user?.email]);
 
-  // Toggle favorite function
   const toggleFavorite = async (tripId, currentFavoriteStatus) => {
     if (!isAuthenticated || !user) {
       toast.info("Please login to add favorites");
@@ -74,7 +73,6 @@ export default function StateRecommendations({ state = "" }) {
     try {
       const newFavoriteStatus = !currentFavoriteStatus;
 
-      // Optimistic update
       setItems((prevItems) =>
         prevItems.map((item) =>
           item.id === tripId ? { ...item, isFavorite: newFavoriteStatus } : item
@@ -92,7 +90,6 @@ export default function StateRecommendations({ state = "" }) {
       );
     } catch (error) {
       console.error("Favorite toggle error:", error);
-      // Revert on error
       setItems((prevItems) =>
         prevItems.map((item) =>
           item.id === tripId ? { ...item, isFavorite: currentFavoriteStatus } : item
@@ -102,7 +99,7 @@ export default function StateRecommendations({ state = "" }) {
     }
   };
 
-  // Active card by center
+  // Scroll detection
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -127,22 +124,14 @@ export default function StateRecommendations({ state = "" }) {
     return () => el.removeEventListener("scroll", onScroll);
   }, [items.length]);
 
-  // Optional: turn vertical wheel into horizontal on desktop
-  useEffect(() => {
+  const scrollLeft = () => {
     const el = scrollerRef.current;
-    if (!el) return;
-    const onWheel = (evt) => {
-      if (evt.shiftKey) return;
-      const atStart = el.scrollLeft <= 0 && evt.deltaY < 0;
-      const atEnd =
-        el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 && evt.deltaY > 0;
-      if (atStart || atEnd) return;
-      evt.preventDefault();
-      el.scrollBy({ left: evt.deltaY, behavior: "smooth" });
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, []);
+    if (el) el.scrollBy({ left: -300, behavior: "smooth" });
+  };
+  const scrollRight = () => {
+    const el = scrollerRef.current;
+    if (el) el.scrollBy({ left: 300, behavior: "smooth" });
+  };
 
   const onExplore = (it) => {
     window.location.href = `/detail-page/${encodeURIComponent(it.id)}`;
@@ -184,97 +173,119 @@ export default function StateRecommendations({ state = "" }) {
   if (!items.length) return null;
 
   return (
-    <section className="bg-[#eef5d2] py-6 sm:py-8 md:py-10">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="relative">
-          <div
-            ref={scrollerRef}
-            className="
-              grid grid-flow-col
-              auto-cols-[minmax(220px,320px)]
-              sm:auto-cols-[minmax(260px,340px)]
-              md:auto-cols-[minmax(300px,360px)]
-              overflow-x-auto overflow-y-hidden no-scrollbar
-              gap-3 sm:gap-5 md:gap-6 px-1
-              snap-x snap-mandatory scroll-smooth
-              overscroll-x-contain w-full
-            "
-            style={{
-              WebkitOverflowScrolling: "touch",
-              scrollPaddingLeft: "16px",
-              scrollPaddingRight: "16px",
-            }}
-          >
-            {items.map((it, idx) => {
-              const isActive = idx === active;
-              const height = "clamp(300px, 60vw, 460px)";
-              return (
-                <article
-                  key={it.id}
-                  className={`
-                    snap-center transition-all duration-300 ease-in-out
-                    ${isActive ? "scale-100 z-10" : "scale-[0.95] opacity-90"}
-                  `}
-                  style={{ height }}
+    <section className="bg-[#eef5d2] py-6 sm:py-8 md:py-10 relative">
+      <div className="max-w-6xl mx-auto px-4 relative">
+        {/* Left Scroll Button */}
+        <button
+          onClick={scrollLeft}
+          className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white rounded-full shadow-lg p-2 sm:p-3 hidden md:flex"
+        >
+          <ChevronLeft className="text-gray-700" />
+        </button>
+
+        {/* Right Scroll Button */}
+        <button
+          onClick={scrollRight}
+          className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white rounded-full shadow-lg p-2 sm:p-3 hidden md:flex"
+        >
+          <ChevronRight className="text-gray-700" />
+        </button>
+
+        <div
+          ref={scrollerRef}
+          className="
+            grid grid-flow-col
+            auto-cols-[minmax(220px,320px)]
+            sm:auto-cols-[minmax(260px,340px)]
+            md:auto-cols-[minmax(300px,360px)]
+            overflow-x-auto overflow-y-hidden no-scrollbar
+            gap-3 sm:gap-5 md:gap-6 px-1
+            snap-x snap-mandatory scroll-smooth
+            overscroll-x-contain w-full
+          "
+          style={{
+            WebkitOverflowScrolling: "touch",
+            scrollPaddingLeft: "16px",
+            scrollPaddingRight: "16px",
+          }}
+        >
+          {items.map((it, idx) => {
+            const isActive = idx === active;
+            const height = "clamp(300px, 60vw, 460px)";
+            return (
+              <article
+                key={it.id}
+                className={`
+                  snap-center transition-all duration-300 ease-in-out
+                  ${isActive ? "scale-100 z-10" : "scale-[0.95] opacity-90"}
+                `}
+                style={{ height }}
+              >
+                <div
+                  className="
+                    relative h-full rounded-[22px] sm:rounded-[26px] md:rounded-[28px]
+                    overflow-hidden shadow-xl
+                  "
+                  style={{
+                    boxShadow:
+                      "0 10px 30px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.06)",
+                  }}
                 >
-                  <div
-                    className="
-                      relative h-full rounded-[22px] sm:rounded-[26px] md:rounded-[28px]
-                      overflow-hidden shadow-xl
-                    "
-                    style={{
-                      boxShadow:
-                        "0 10px 30px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.06)",
-                    }}
-                  >
-                    <img
-                      src={it.image}
-                      alt={it.title}
-                      onError={(e) => {
-                        e.currentTarget.src = fallbackImg;
+                  <img
+                    src={it.image}
+                    alt={it.title}
+                    onError={(e) => (e.currentTarget.src = fallbackImg)}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+
+                  <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20">
+                    <button
+                      type="button"
+                      className="h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                      aria-label={
+                        it.isFavorite
+                          ? "Remove from favorites"
+                          : "Add to favorites"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavorite(it.id, it.isFavorite);
                       }}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      sizes="(max-width: 640px) 70vw, (max-width: 1024px) 40vw, 360px"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                    >
+                      <Heart
+                        size={18}
+                        className={`${
+                          it.isFavorite ? "text-rose-500" : "text-gray-700"
+                        }`}
+                        fill={it.isFavorite ? "#ef4444" : "none"}
+                        strokeWidth={2}
+                      />
+                    </button>
+                  </div>
 
-                    <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20">
+                  <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-white/70 text-gray-800">
+                      {it.tripType}
+                    </span>
+                  </div>
+
+                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6 text-white">
+                    <h3 className="text-[clamp(16px,3.5vw,24px)] font-extrabold drop-shadow leading-snug">
+                      {it.title}
+                    </h3>
+                    <p className="mt-2 text-[clamp(12px,2.8vw,14px)] text-white/90 line-clamp-3">
+                      {it.desc}
+                    </p>
+
+                    <div className="mt-3 flex justify-between sm:mt-4">
                       <button
-                        type="button"
-                        className="h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
-                        aria-label={it.isFavorite ? "Remove from favorites" : "Add to favorites"}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleFavorite(it.id, it.isFavorite);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={() => onExplore(it)}
+                        className="inline-flex items-center justify-center px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 rounded-full font-semibold bg-green-700 hover:bg-green-800 text-white shadow-lg shadow-green-700/30 transition text-[clamp(12px,2.8vw,14px)]"
                       >
-                        <Heart
-                          size={18}
-                          className={`transition-colors pointer-events-none ${
-                            it.isFavorite ? "text-rose-500" : "text-gray-700"
-                          }`}
-                          fill={it.isFavorite ? "#ef4444" : "none"}
-                          strokeWidth={2}
-                        />
+                        Explore
                       </button>
-                    </div>
-
-                    <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-white/70 text-gray-800">
-                        {it.tripType}
-                      </span>
-                    </div>
-
-                    <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6 text-white">
-                      <h3 className="text-[clamp(16px,3.5vw,24px)] font-extrabold drop-shadow leading-snug">
-                        {it.title}
-                      </h3>
-                      <p className="mt-2 text-[clamp(12px,2.8vw,14px)] text-white/90 line-clamp-3">
-                        {it.desc}
-                      </p>
-
                       <div className="mt-3 flex items-center gap-2 sm:gap-3 text-[clamp(11px,2.6vw,13px)] text-white/90">
                         {it.duration ? (
                           <span className="inline-flex items-center gap-1">
@@ -287,29 +298,12 @@ export default function StateRecommendations({ state = "" }) {
                           </span>
                         ) : null}
                       </div>
-
-                      <div className="mt-3 sm:mt-4">
-                        <button
-                          onClick={() => onExplore(it)}
-                          className="
-                            inline-flex items-center justify-center
-                            px-4 sm:px-5 md:px-6
-                            py-2 sm:py-2.5
-                            rounded-full font-semibold
-                            bg-green-700 hover:bg-green-800 text-white
-                            shadow-lg shadow-green-700/30 transition
-                            text-[clamp(12px,2.8vw,14px)]
-                          "
-                        >
-                          Explore
-                        </button>
-                      </div>
                     </div>
                   </div>
-                </article>
-              );
-            })}
-          </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
 
