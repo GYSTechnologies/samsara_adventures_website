@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Power, PowerOff, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axiosInstance from '../../api/axiosInstance';
 
@@ -115,7 +115,7 @@ const AdminVectorImage = () => {
         id: id,
         active: !currentStatus
       });
-      toast.success(`State ${!currentStatus ? 'enabled' : 'disabled'} successfully`);
+      toast.success(`State ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
       fetchStates();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -157,7 +157,7 @@ const AdminVectorImage = () => {
           </div>
           <button
             onClick={() => openModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors shadow-sm"
           >
             <Plus className="w-5 h-5" />
             Add State
@@ -193,60 +193,76 @@ const AdminVectorImage = () => {
               <tbody className="divide-y">
                 {states.map((state) => (
                   <tr key={state._id} className="hover:bg-gray-50 transition-colors">
+                    {/* Image Column */}
                     <td className="py-4 px-6">
-                      <img
-                        src={state.image.url}
-                        alt={state.state}
-                        className="w-16 h-16 object-cover rounded-lg border"
-                      />
+                      <div className="relative w-16 h-16">
+                        <img
+                          src={state.image.url}
+                          alt={state.state}
+                          className={`w-full h-full object-cover rounded-lg border-2 transition-all duration-300 ${
+                            !state.active ? 'grayscale opacity-50 border-gray-300' : 'border-emerald-200'
+                          }`}
+                        />
+                        {!state.active && (
+                          <div className="absolute inset-0 bg-gray-900/30 rounded-lg flex items-center justify-center">
+                            <X className="w-8 h-8 text-white opacity-80" />
+                          </div>
+                        )}
+                      </div>
                     </td>
+
+                    {/* State Name Column */}
                     <td className="py-4 px-6">
-                      <span className="font-medium text-gray-900">{state.state}</span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          state.active
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {state.active ? 'Active' : 'Inactive'}
+                      <span className={`font-medium text-base ${
+                        state.active ? 'text-gray-900' : 'text-gray-400'
+                      }`}>
+                        {state.state}
                       </span>
                     </td>
+
+                    {/* Status Toggle Column */}
                     <td className="py-4 px-6">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Toggle Status Button */}
+                      <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleToggleStatus(state._id, state.active)}
                           disabled={actionLoading === `toggle-${state._id}`}
-                          className={`p-2 rounded-lg transition-colors ${
-                            state.active
-                              ? 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                              : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-600'
+                          className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            state.active ? 'bg-emerald-600' : 'bg-gray-300'
                           }`}
-                          title={state.active ? 'Disable' : 'Enable'}
                         >
-                          {actionLoading === `toggle-${state.id}` ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : state.active ? (
-                            <PowerOff className="w-4 h-4" />
-                          ) : (
-                            <Power className="w-4 h-4" />
-                          )}
+                          <span
+                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                              state.active ? 'translate-x-8' : 'translate-x-1'
+                            }`}
+                          />
                         </button>
+                        
+                        {actionLoading === `toggle-${state._id}` ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                        ) : (
+                          <span className={`text-sm font-medium ${
+                            state.active ? 'text-emerald-700' : 'text-gray-500'
+                          }`}>
+                            {state.active ? 'Active' : 'Inactive'}
+                          </span>
+                        )}
+                      </div>
+                    </td>
 
+                    {/* Actions Column */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center justify-end gap-2">
                         {/* Delete Button */}
                         <button
                           onClick={() => handleDelete(state._id)}
                           disabled={actionLoading === `delete-${state._id}`}
-                          className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
-                          title="Delete"
+                          className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Delete State"
                         >
-                          {actionLoading === `delete-${state.id}` ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                          {actionLoading === `delete-${state._id}` ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
                           ) : (
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-5 h-5" />
                           )}
                         </button>
                       </div>
@@ -264,17 +280,17 @@ const AdminVectorImage = () => {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-gray-700"
             >
               Previous
             </button>
-            <span className="px-4 py-2 text-gray-700">
+            <span className="px-4 py-2 text-gray-700 font-medium">
               Page {page} of {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-gray-700"
             >
               Next
             </button>
@@ -284,46 +300,82 @@ const AdminVectorImage = () => {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {editMode ? 'Edit State' : 'Add New State'}
-            </h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editMode ? 'Edit State' : 'Add New State'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
 
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleCreate} className="space-y-5">
               {/* State Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  State Name *
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  State Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.state}
                   onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  placeholder="Enter state name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  placeholder="e.g., Karnataka, Maharashtra"
                   required
                 />
               </div>
 
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  State Image *
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  State Image <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                />
+                <div className="mt-1">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/50 transition-all">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Plus className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 font-medium">
+                        Click to upload image
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG, SVG up to 5MB
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      required={!editMode}
+                    />
+                  </label>
+                </div>
+                
                 {imagePreview && (
-                  <div className="mt-4">
+                  <div className="mt-4 relative">
                     <img
                       src={imagePreview}
                       alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg border"
+                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setFormData(prev => ({ ...prev, image: null }));
+                      }}
+                      className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
               </div>
@@ -336,19 +388,19 @@ const AdminVectorImage = () => {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading === 'create'}
-                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
                 >
                   {actionLoading === 'create' ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Creating...
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Creating...</span>
                     </>
                   ) : (
                     'Create State'
