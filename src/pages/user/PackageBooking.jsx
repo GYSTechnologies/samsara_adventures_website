@@ -10,11 +10,8 @@ import {
   Shield,
   Clock,
   ArrowLeft,
-  PawPrint,
-  PartyPopper,
-  Camera,
-  Languages,
-  Edit3,
+  AlertCircle,
+  Users,
   Lock,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
@@ -43,6 +40,22 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
     console.log("🔍 PackageBooking - Props:", { tripId, bookingData, tripDetails, user });
   }, [tripId, bookingData, tripDetails, user]);
 
+  // Extract trip details
+  const {
+    title,
+    images,
+    duration,
+    payment,
+    startDate,
+    endDate,
+    pickupDropLocation,
+    itinerary,
+    state: tripState,
+    category,
+    availableSeats = 0,
+    totalSeats = 0,
+  } = tripDetails || {};
+
   // Extract and set contact information properly
   useEffect(() => {
     if (bookingData || user) {
@@ -62,19 +75,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
     }
   }, [bookingData, user]);
 
-  const {
-    title,
-    images,
-    duration,
-    payment,
-    startDate,
-    endDate,
-    pickupDropLocation,
-    itinerary,
-    state: tripState,
-    category,
-  } = tripDetails || {};
-
   // Initialize counts and add-ons
   useEffect(() => {
     if (bookingData) {
@@ -85,10 +85,13 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
 
   const totalTravelers = Math.max(1, adultsCount + childrenCount);
 
+  // NEW: Check if seats exceed available
+  const seatsExceeded = totalTravelers > availableSeats;
+  const remainingSeats = Math.max(0, availableSeats - totalTravelers);
+
   // Initialize passengers
   useEffect(() => {
     const newPassengers = Array.from({ length: totalTravelers }, (_, i) => {
-      // For first passenger, use the contact name if available
       if (i === 0 && contactInfo.fullName) {
         return {
           name: contactInfo.fullName,
@@ -133,7 +136,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
     return errs.every((x) => !x.name && !x.age);
   };
 
-
   const calculatePrices = () => {
     const totalPersons = adultsCount + childrenCount;
     const perPersonBase = payment?.subTotal || payment?.subtotal || 0;
@@ -159,6 +161,12 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
   const { base, taxes, insurance, activities, total, perPersonPrice } = calculatePrices();
 
   const handlePayment = async () => {
+    // NEW: Check seats availability
+    if (seatsExceeded) {
+      toast.error(`Only ${availableSeats} seats available. You selected ${totalTravelers} travelers.`);
+      return;
+    }
+
     // Validation
     if (!contactInfo.phone || contactInfo.phone.length < 10) {
       toast.error("Valid phone number is required (min 10 digits)");
@@ -212,44 +220,30 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
           theme: { color: "#65a30d" },
           handler: async (paymentResponse) => {
             try {
-              // Prepare complete booking data matching backend structure
               const verificationData = {
                 razorpay_order_id: paymentResponse.razorpay_order_id,
                 razorpay_payment_id: paymentResponse.razorpay_payment_id,
                 razorpay_signature: paymentResponse.razorpay_signature,
                 bookingData: {
-                  // Basic trip info
                   tripId,
                   email: contactInfo.email,
                   phone: contactInfo.phone,
                   name: contactInfo.fullName,
                   fullName: contactInfo.fullName,
-                  
-                  // Traveler counts
                   adults: adultsCount,
                   children: childrenCount,
                   childrens: childrenCount,
                   total_members: adultsCount + childrenCount,
-                  
-                  // Passenger details
                   persons: passengers,
-                  
-                  // Location details
                   current_location: contactInfo.currentLocation,
                   pickupLocation: contactInfo.currentLocation,
                   pickupAndDrop: pickupDropLocation,
-                  
-                  // Special requests and add-ons
                   specialRequests: bookingData?.specialRequests || "",
-                  
-                  // Trip details
                   title: title,
                   duration: duration,
                   startDate: startDate,
                   endDate: endDate,
                   image: images?.[0],
-                  
-                  // Trip metadata
                   tripDetails: {
                     title,
                     duration,
@@ -268,8 +262,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
                       activities: payment?.activities || 0,
                     },
                   },
-                  
-                  // Payment info
                   totalAmount: total,
                   payment: {
                     subtotal: base,
@@ -278,8 +270,6 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
                     activities,
                     grandTotal: total,
                   },
-                  
-                  // Booking status
                   tripType: "PACKAGE",
                   selectedBatch: "scheduled",
                   bookingStatus: "CONFIRMED",
@@ -351,10 +341,19 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
     }).format(new Date(d));
   };
 
-  // Calculate free cancellation date (7 days before start)
   const freeCancellationDate = startDate 
     ? new Date(new Date(startDate).setDate(new Date(startDate).getDate() - 7))
     : null;
+
+  // NEW: Determine if payment button should be disabled
+  const isPaymentDisabled = 
+    loading || 
+    paymentSuccess || 
+    !contactInfo.phone || 
+    !contactInfo.email || 
+    contactInfo.phone.length < 10 ||
+    seatsExceeded ||
+    availableSeats === 0;
 
   return (
     <div className="min-h-screen bg-[#f0f2d9] md:pt-20 pb-20 md:pb-8">
@@ -408,6 +407,49 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
               </div>
             </div>
 
+<div className={`border-t px-4 py-2 flex items-center justify-between ${
+  availableSeats === 0 
+    ? "bg-red-50 border-red-100" 
+    : seatsExceeded 
+    ? "bg-orange-50 border-orange-100"
+    : availableSeats <= 5 
+    ? "bg-yellow-50 border-yellow-100" 
+    : "bg-green-50 border-green-100"
+}`}>
+  <div className="flex items-center gap-2">
+    <Users className={`w-4 h-4 ${
+      availableSeats === 0 
+        ? "text-red-600" 
+        : seatsExceeded 
+        ? "text-orange-600"
+        : availableSeats <= 5 
+        ? "text-yellow-600" 
+        : "text-green-600"
+    }`} />
+    <span className={`text-sm font-medium ${
+      availableSeats === 0 
+        ? "text-red-700" 
+        : seatsExceeded 
+        ? "text-orange-700"
+        : availableSeats <= 5 
+        ? "text-yellow-700" 
+        : "text-green-700"
+    }`}>
+      {availableSeats === 0 
+        ? "Booking Full for this Package" 
+        : seatsExceeded
+        ? `Only ${availableSeats} seats available`
+        : `${availableSeats} seats available`}
+    </span>
+  </div>
+  {seatsExceeded && availableSeats > 0 && (
+    <span className="text-xs text-orange-600">
+      You selected {totalTravelers}
+    </span>
+  )}
+</div>
+
+
             {/* Travelers Counter */}
             <div className="border-t border-gray-100 px-4 py-3">
               <div className="space-y-3">
@@ -427,7 +469,7 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
                     <span className="font-semibold text-lime-900 w-8 text-center">{adultsCount}</span>
                     <button
                       onClick={() => setAdultsCount(adultsCount + 1)}
-                      disabled={adultsCount >= 10}
+                      disabled={adultsCount >= 10 || (adultsCount + childrenCount) >= availableSeats}
                       className="w-8 h-8 rounded-full bg-lime-600 text-white flex items-center justify-center hover:bg-lime-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       +
@@ -451,7 +493,7 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
                     <span className="font-semibold text-lime-900 w-8 text-center">{childrenCount}</span>
                     <button
                       onClick={() => setChildrenCount(childrenCount + 1)}
-                      disabled={childrenCount >= 10}
+                      disabled={childrenCount >= 10 || (adultsCount + childrenCount) >= availableSeats}
                       className="w-8 h-8 rounded-full bg-lime-600 text-white flex items-center justify-center hover:bg-lime-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       +
@@ -460,6 +502,35 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
                 </div>
               </div>
             </div>
+
+            {/* NEW: Seats Exceeded Warning */}
+            {/* Seats Warning Messages */}
+{availableSeats === 0 ? (
+  // Show "Booking Full" message when no seats available
+  <div className="bg-red-50 border-t border-red-100 px-4 py-3 flex items-start gap-2">
+    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+    <div>
+      <p className="text-sm font-medium text-red-700">Booking Full</p>
+      <p className="text-xs text-red-600 mt-1">
+        This package is fully booked. All seats have been reserved. 
+        Please check other available packages or contact support for alternatives.
+      </p>
+    </div>
+  </div>
+) : seatsExceeded ? (
+  // Show "Insufficient Seats" when selected travelers exceed available seats
+  <div className="bg-orange-50 border-t border-orange-100 px-4 py-3 flex items-start gap-2">
+    <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+    <div>
+      <p className="text-sm font-medium text-orange-700">Insufficient Seats</p>
+      <p className="text-xs text-orange-600 mt-1">
+        You've selected {totalTravelers} travelers but only {availableSeats} seats are available. 
+        Please reduce the number of travelers.
+      </p>
+    </div>
+  </div>
+) : null}
+
 
             {/* Cancellation Policy */}
             {freeCancellationDate && (
@@ -551,7 +622,7 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
             </div>
           </div>
 
-          {/* Travelers */}
+          {/* Travelers - Keep existing code */}
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="px-4 py-3 bg-[#f0f2d9] border-b border-lime-200">
               <h2 className="text-base font-semibold text-lime-900">Travelers ({totalTravelers})</h2>
@@ -644,10 +715,10 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
 
               <button
                 onClick={handlePayment}
-                disabled={loading || paymentSuccess || !contactInfo.phone || !contactInfo.email || contactInfo.phone.length < 10}
+                disabled={isPaymentDisabled}
                 className={`w-full py-3.5 px-6 rounded-xl font-semibold text-white transition-all duration-200 ${
-                  loading || !contactInfo.phone || !contactInfo.email
-                    ? "bg-lime-400 cursor-not-allowed"
+                  isPaymentDisabled
+                    ? "bg-gray-400 cursor-not-allowed"
                     : paymentSuccess
                     ? "bg-green-600"
                     : "bg-lime-600 hover:bg-lime-700 shadow-lg hover:shadow-xl active:scale-[0.98]"
@@ -657,6 +728,10 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
                   <Busy text="Processing Payment..." />
                 ) : paymentSuccess ? (
                   "Payment Successful!"
+                ) : availableSeats === 0 ? (
+                  "No Seats Available"
+                ) : seatsExceeded ? (
+                  `Reduce to ${availableSeats} Travelers`
                 ) : !contactInfo.phone || !contactInfo.email ? (
                   "Contact Details Required"
                 ) : contactInfo.phone.length < 10 ? (
