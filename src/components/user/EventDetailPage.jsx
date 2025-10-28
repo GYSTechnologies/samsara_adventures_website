@@ -275,7 +275,7 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f2d9] pt-16">
+    <div className="min-h-screen bg-[#f0f2d9] py-16 md:py-0">
       {/* Hero Section */}
       <div
         className="relative h-64 sm:h-80 lg:h-96 xl:h-[500px] flex items-center justify-center bg-cover bg-center bg-no-repeat"

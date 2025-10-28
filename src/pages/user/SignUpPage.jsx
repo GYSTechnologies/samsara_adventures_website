@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -17,7 +15,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
 
 // Constants for validation
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -49,6 +46,8 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(null);
   const [phoneError, setPhoneError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // Focus first OTP input when step changes
@@ -86,10 +85,10 @@ export default function SignupPage() {
       setImagePreview(null);
       return;
     }
-    
+
     const objectUrl = URL.createObjectURL(profileImage);
     setImagePreview(objectUrl);
-    
+
     // Clean up
     return () => URL.revokeObjectURL(objectUrl);
   }, [profileImage]);
@@ -98,9 +97,15 @@ export default function SignupPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear errors when typing
+    // Clear specific field errors when typing
     if (name === "phoneNumber" && phoneError) {
       setPhoneError("");
+    }
+    if (name === "name" && nameError) {
+      setNameError("");
+    }
+    if (name === "email" && emailError) {
+      setEmailError("");
     }
   };
 
@@ -133,61 +138,112 @@ export default function SignupPage() {
     }
   };
 
+  // IMPROVED: Phone number validation
   const validatePhoneNumber = (phone) => {
-    if (!phone) return true; // optional field
+    if (!phone || phone.trim() === "") {
+      return true; // Optional field
+    }
+    if(phone.length > 10 || phone.length < 7){
+      return false;
+    }
+    // Remove spaces, dashes, parentheses for validation
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, "");
 
-    const regex = /^\+?[0-9\s\-\(\)]{8,20}$/;
-    return regex.test(phone);
+    // Must be 10-15 digits (with optional + prefix)
+    const regex = /^\+?\d{10,15}$/;
+    return regex.test(cleanPhone);
   };
 
-const handleSignup = async (e) => {
-  e.preventDefault();
-  setError("");
-  setImageError("");
-  setPhoneError("");
+  // NEW: Name validation
+  const validateName = (name) => {
+    if (!name || name.trim().length < 2) {
+      return "Name must be at least 2 characters";
+    }
+    if (name.trim().length > 50) {
+      return "Name must be less than 50 characters";
+    }
+    if (!/^[a-zA-Z\s]+$/.test(name)) {
+      return "Name can only contain letters and spaces";
+    }
+    return "";
+  };
 
-  if (!validatePhoneNumber(formData.phoneNumber)) {
-    setPhoneError("Please enter a valid phone number");
-    return;
-  }
+  // NEW: Email validation
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regex.test(email)) {
+      return "Please enter a valid email address";
+    }
+    return "";
+  };
 
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError("");
+    setImageError("");
+    setPhoneError("");
+    setNameError("");
+    setEmailError("");
 
-  const formDataToSend = new FormData();
-  formDataToSend.append("name", formData.name);
-  formDataToSend.append("email", formData.email);
-  formDataToSend.append("password", formData.password);
-  formDataToSend.append("userType", formData.userType);
-  formDataToSend.append("phoneNumber", formData.phoneNumber);
+    // Validate all fields
+    const nameValidation = validateName(formData.name);
+    if (nameValidation) {
+      setNameError(nameValidation);
+      return;
+    }
 
-  // Primary: prefer the profileImage state (File). Fallback: use file input DOM files.
-  let fileToAppend = profileImage;
-  if (!fileToAppend && fileInputRef.current?.files?.length) {
-    fileToAppend = fileInputRef.current.files[0];
-    console.warn("DEBUG - using fallback file from input element");
-  }
+    const emailValidation = validateEmail(formData.email);
+    if (emailValidation) {
+      setEmailError(emailValidation);
+      return;
+    }
 
-  if (fileToAppend) {
-    formDataToSend.append("profileUrl", fileToAppend);
-  } else {
-    console.warn("DEBUG - No file found to append (profileImage and file input are empty)");
-  }
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
 
-  // DEBUG: confirm FormData contains file
-  try {
-    const fdFile = formDataToSend.get("profileUrl");
-  } catch (err) {
-    console.warn("DEBUG - FormData check error", err);
-  }
+    // Phone number validation
+    if (formData.phoneNumber && !validatePhoneNumber(formData.phoneNumber)) {
+      setPhoneError("Please enter a valid phone number (10-15 digits)");
+      return;
+    }
 
-  // Call signup - pass the actual FormData
-  const res = await signup(formDataToSend); // signup should already handle FormData
-  if (res.success) {
-    setStep(2);
-  } else {
-    setError(res.message || "Signup failed");
-  }
-};
+    // Create FormData
+    const formDataToSend = new FormData();
+    formDataToSend.append("name", formData.name.trim());
+    formDataToSend.append("email", formData.email.trim().toLowerCase());
+    formDataToSend.append("password", formData.password);
+    formDataToSend.append("userType", formData.userType);
+    
+    // Only append phone if it has a value
+    if (formData.phoneNumber && formData.phoneNumber.trim()) {
+      formDataToSend.append("phoneNumber", formData.phoneNumber.trim());
+    }
 
+    // Append profile image if exists
+    let fileToAppend = profileImage;
+    if (!fileToAppend && fileInputRef.current?.files?.length) {
+      fileToAppend = fileInputRef.current.files[0];
+    }
+
+    if (fileToAppend) {
+      formDataToSend.append("profileUrl", fileToAppend);
+    }
+
+    console.log("Submitting signup with data:");
+    for (let [key, value] of formDataToSend.entries()) {
+      console.log(key, typeof value === 'object' && value instanceof File ? value.name : value);
+    }
+
+    // Call signup - pass the actual FormData
+    const res = await signup(formDataToSend);
+    if (res.success) {
+      setStep(2);
+    } else {
+      setError(res.message || "Signup failed. Please try again.");
+    }
+  };
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -230,23 +286,19 @@ const handleSignup = async (e) => {
 
   const handleResendCode = async () => {
     setError("");
-    // You would typically call an API endpoint to resend the code here
-    // For now, we'll just show a success message
-    setError("Verification code resent successfully!", "success");
+    // Call your resend OTP API here
+    setError("Verification code resent successfully!");
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setGoogleLoading(true);
     setError("");
-    
+
     try {
       const token = credentialResponse.credential;
-      
-      // Send token to backend for verification
       const res = await googleAuth(token);
-      
+
       if (res.success) {
-        // Save token and navigate to home/dashboard
         localStorage.setItem("token", res.token);
         navigate("/", { replace: true });
       }
@@ -299,10 +351,10 @@ const handleSignup = async (e) => {
                         <Camera className="w-8 h-8 text-blue-500" />
                       </div>
                       <input
-                      name="profileUrl"
+                        name="profileUrl"
                         ref={fileInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         className="hidden"
                         onChange={handleImageChange}
                       />
@@ -337,7 +389,7 @@ const handleSignup = async (e) => {
               {/* Name Input */}
               <div className="group">
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Full Name
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -345,18 +397,30 @@ const handleSignup = async (e) => {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white hover:border-gray-300"
+                    className={`w-full px-4 py-2.5 pl-10 border-2 ${
+                      nameError ? "border-red-300" : "border-gray-200"
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white hover:border-gray-300`}
                     placeholder="Enter your full name"
                     required
+                    minLength="2"
+                    maxLength="50"
                   />
-                  <User className="w-4 h-4 text-gray-400 absolute left-3 top-3 group-focus-within:text-blue-500 transition-colors" />
+                  <User className={`w-4 h-4 absolute left-3 top-3 transition-colors ${
+                    nameError ? "text-red-400" : "text-gray-400 group-focus-within:text-blue-500"
+                  }`} />
                 </div>
+                {nameError && (
+                  <div className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {nameError}
+                  </div>
+                )}
               </div>
 
               {/* Email Input */}
               <div className="group">
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Email Address
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -364,18 +428,28 @@ const handleSignup = async (e) => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white hover:border-gray-300"
+                    className={`w-full px-4 py-2.5 pl-10 border-2 ${
+                      emailError ? "border-red-300" : "border-gray-200"
+                    } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white hover:border-gray-300`}
                     placeholder="Enter your email address"
                     required
                   />
-                  <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3 group-focus-within:text-blue-500 transition-colors" />
+                  <Mail className={`w-4 h-4 absolute left-3 top-3 transition-colors ${
+                    emailError ? "text-red-400" : "text-gray-400 group-focus-within:text-blue-500"
+                  }`} />
                 </div>
+                {emailError && (
+                  <div className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {emailError}
+                  </div>
+                )}
               </div>
 
               {/* Password Input */}
               <div className="group">
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Password
+                  Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -407,9 +481,11 @@ const handleSignup = async (e) => {
                       <span>Password strength:</span>
                       <span
                         className={`font-medium ${
-                          passwordStrength.color === "bg-red-500" ? "text-red-500" :
-                          passwordStrength.color === "bg-yellow-500" ? "text-yellow-500" :
-                          "text-green-500"
+                          passwordStrength.color === "bg-red-500"
+                            ? "text-red-500"
+                            : passwordStrength.color === "bg-yellow-500"
+                            ? "text-yellow-500"
+                            : "text-green-500"
                         }`}
                       >
                         {passwordStrength.text}
@@ -444,10 +520,10 @@ const handleSignup = async (e) => {
                 )}
               </div>
 
-              {/* Phone Input */}
+              {/* Phone Input - IMPROVED */}
               <div className="group">
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Phone Number
+                  Phone Number <span className="text-gray-400 text-xs">(Optional)</span>
                 </label>
                 <div className="relative">
                   <input
@@ -456,11 +532,14 @@ const handleSignup = async (e) => {
                     value={formData.phoneNumber}
                     onChange={handleChange}
                     className={`w-full px-4 py-2.5 pl-10 border-2 ${
-                      phoneError ? "border-red-200" : "border-gray-200"
+                      phoneError ? "border-red-300" : "border-gray-200"
                     } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-white hover:border-gray-300`}
-                    placeholder="e.g. +1234567890 (optional)"
+                    placeholder="+1234567890 or 9876543210"
+                    maxLength="20"
                   />
-                  <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-3 group-focus-within:text-blue-500 transition-colors" />
+                  <Phone className={`w-4 h-4 absolute left-3 top-3 transition-colors ${
+                    phoneError ? "text-red-400" : "text-gray-400 group-focus-within:text-blue-500"
+                  }`} />
                 </div>
                 {phoneError && (
                   <div className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -468,7 +547,7 @@ const handleSignup = async (e) => {
                     {phoneError}
                   </div>
                 )}
-                {formData.phoneNumber && !phoneError && (
+                {formData.phoneNumber && !phoneError && validatePhoneNumber(formData.phoneNumber) && (
                   <div className="text-green-500 text-sm mt-1 flex items-center gap-1">
                     <Check className="w-3 h-3" />
                     Valid phone number format
@@ -497,7 +576,7 @@ const handleSignup = async (e) => {
           </>
         ) : (
           <>
-            {/* OTP Verification Step */}
+            {/* OTP Verification Step - Keep existing code */}
             <div className="text-center">
               <button
                 type="button"
@@ -603,7 +682,7 @@ const handleSignup = async (e) => {
               <span className="px-3 bg-white text-gray-500">or</span>
             </div>
           </div>
-          
+
           {/* Google Sign In Button */}
           <div className="mb-3 flex justify-center">
             <GoogleLogin
@@ -616,11 +695,9 @@ const handleSignup = async (e) => {
               width="280"
             />
           </div>
-          
+
           <p className="text-sm text-gray-600">
-            {step === 1
-              ? "Already have an account? "
-              : "Remember your password? "}
+            {step === 1 ? "Already have an account? " : "Remember your password? "}
             <button
               onClick={() => navigate("/login")}
               className="text-blue-600 hover:text-indigo-600 font-semibold hover:underline transition-all duration-200"

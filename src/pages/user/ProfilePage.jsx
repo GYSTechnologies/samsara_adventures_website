@@ -18,6 +18,7 @@ import {
   Save,
   Download,
   Share2,
+  EyeOff,
   Loader2,
   Calendar as Event,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import axiosInstance from "../../api/axiosInstance";
 import EventHistoryPage from "../../components/user/EventHistory";
 import { CancelBookingModal } from "../../components/user/CancelBookingModal";
 import CustomizedPlansPage from "./CustomizedPlansPage";
+import ProfilePageComponent from "./UserProfile/ProfilePageComponent";
 // Constants
 const PROFILE_PLACEHOLDER =
   "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=face";
@@ -36,32 +38,29 @@ const ProfilePage = () => {
   // State management
   const [currentPage, setCurrentPage] = useState("profile");
   const [expandedFAQ, setExpandedFAQ] = useState(null);
-  const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  // User data
-  const [profileData, setProfileData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    location: "",
-    bio: "",
-    profileUrl: PROFILE_PLACEHOLDER,
-  });
-
-  // Trips data
   const [bookings, setBookings] = useState([]);
+  const [user, setUser] = useState(null); // ADD THIS
 
-  // Password change
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  // Fetch user data on component mount
+  useEffect(() => {
+    fetchUserData();
+  }, []);
 
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get("/api/users/profile");
+      setUser(response.data); // Set user data
+      console.log("User data loaded:", response.data);
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Navigation
   const navItems = [
     { id: "profile", label: "Profile", icon: <User size={18} /> },
@@ -108,34 +107,6 @@ const ProfilePage = () => {
     },
   ];
 
-  // Data fetching
-  const fetchProfile = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get("/api/users/profile");
-      const { name, email, phoneNumber, location, bio, profileUrl } =
-        response.data;
-
-      const nameParts = name.split(" ");
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(" ");
-
-      setProfileData({
-        firstName,
-        lastName,
-        email,
-        phone: phoneNumber || "",
-        location: location || "",
-        bio: bio || "",
-        profileUrl: profileUrl || PROFILE_PLACEHOLDER,
-      });
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch profile");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
@@ -147,89 +118,6 @@ const ProfilePage = () => {
       setLoading(false);
     }
   }, []);
-
-  // Profile updates
-  const updateProfile = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { firstName, lastName, ...rest } = profileData;
-      const name = `${firstName} ${lastName}`;
-
-      await axiosInstance.put("/api/users/profile", {
-        name,
-        ...rest,
-      });
-
-      setSuccess("Profile updated successfully!");
-      setEditMode(false);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to update profile");
-    } finally {
-      setLoading(false);
-    }
-  }, [profileData]);
-
-  const updateProfilePicture = useCallback(async (file) => {
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("profile", file);
-
-      const response = await axiosInstance.put(
-        "/api/users/profile/picture",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      setProfileData((prev) => ({
-        ...prev,
-        profileUrl: response.data.profileUrl,
-      }));
-      setSuccess("Profile picture updated successfully!");
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to update profile picture"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const changePassword = useCallback(async () => {
-    try {
-      if (passwordData.newPassword !== passwordData.confirmPassword) {
-        throw new Error("Passwords don't match");
-      }
-
-      setLoading(true);
-      await axiosInstance.put("/api/users/profile/password", {
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      });
-
-      setSuccess("Password changed successfully!");
-      setShowPasswordModal(false);
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Failed to change password"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [passwordData]);
-
-
 
   const downloadItinerary = useCallback(async (bookingId) => {
     try {
@@ -253,9 +141,9 @@ const ProfilePage = () => {
 
   // Effects
   useEffect(() => {
-    fetchProfile();
+    // fetchProfile();
     fetchBookings();
-  }, [fetchProfile, fetchBookings]);
+  }, [ fetchBookings]);
 
   useEffect(() => {
     if (error || success) {
@@ -353,387 +241,6 @@ const ProfilePage = () => {
       </div>
     </div>
   );
-
-const ProfilePageComponent = () => {
-  const fileInputRef = useRef(null);
-
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const isImage = file.type.startsWith("image/");
-    const isLt5MB = file.size <= 5 * 1024 * 1024;
-    if (!isImage) {
-      // setError("Please upload a valid image file");
-      return;
-    }
-    if (!isLt5MB) {
-      // setError("Image must be less than 5 MB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfileData((prev) => ({
-        ...prev,
-        profileUrl: reader.result,
-      }));
-      updateProfilePicture(file);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const triggerFileInput = () => fileInputRef.current?.click();
-
-  return (
-    <div className="space-y-5 sm:space-y-6">
-      {/* Alerts */}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-          {success}
-        </div>
-      )}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Password modal */}
-      {showPasswordModal && (
-        <PasswordModal
-          passwordData={passwordData}
-          setPasswordData={setPasswordData}
-          changePassword={changePassword}
-          loading={loading}
-          setShowPasswordModal={setShowPasswordModal}
-        />
-      )}
-
-      {/* Header actions */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
-        <div className="hidden lg:block">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Profile</h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Manage personal information and preferences
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => setShowPasswordModal(true)}
-            className="bg-gradient-to-r from-lime-900 to-lime-800 text-white px-2 sm:px-3 py-2.5 rounded-xl font-medium hover:shadow-lg hover:scale-[1.02] transition-all duration-200 inline-flex items-center gap-2"
-          >
-            <Settings size={16} />
-            <span>Change Password</span>
-          </button>
-
-          <button
-            onClick={() => (editMode ? updateProfile() : setEditMode(true))}
-            disabled={loading}
-            className={`inline-flex items-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl font-medium transition-all duration-200 ${
-              editMode
-                ? "bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-200"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300 hover:shadow-md"
-            } disabled:opacity-60 disabled:cursor-not-allowed`}
-          >
-            {loading ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : editMode ? (
-              <Save size={16} />
-            ) : (
-              <Edit2 size={16} />
-            )}
-            <span className="whitespace-nowrap">
-              {editMode ? "Save Changes" : "Edit Profile"}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Card */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        {/* Cover */}
-        <div className="bg-gradient-to-r from-lime-900 via-lime-800 to-lime-700 h-28 sm:h-28 relative">
-          <div className="absolute inset-0 bg-black/10" />
-        </div>
-
-        {/* Profile header */}
-        <div className="px-4 sm:px-6 pb-6 relative">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-14 sm:-mt-16">
-            <div className="relative">
-              <img
-                src={profileData.profileUrl}
-                alt="Profile"
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-4 border-white shadow-xl"
-              />
-              {editMode && (
-                <>
-                  <button
-                    onClick={triggerFileInput}
-                    className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2.5 rounded-full shadow-lg hover:bg-blue-700 transition-colors group"
-                    aria-label="Change profile picture"
-                  >
-                    <Camera size={16} className="group-hover:scale-110 transition-transform" />
-                  </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageChange}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0 pt-2">
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-                {profileData.firstName} {profileData.lastName}
-              </h3>
-              <p className="text-sm sm:text-base text-gray-600 break-words">
-                {profileData.email}
-              </p>
-            </div>
-          </div>
-
-          {/* Fields */}
-          <div className="mt-6 sm:mt-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-              <ProfileField
-                key="first-name"
-                label="First Name"
-                value={profileData.firstName}
-                onChange={(e) =>
-                  setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
-                }
-                editMode={editMode}
-              />
-
-              <ProfileField
-                key="last-name"
-                label="Last Name"
-                value={profileData.lastName}
-                onChange={(e) =>
-                  setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
-                }
-                editMode={editMode}
-              />
-
-              <ProfileField
-                key="email"
-                label="Email Address"
-                value={profileData.email}
-                onChange={(e) =>
-                  setProfileData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                editMode={editMode}
-                type="email"
-              />
-
-              <ProfileField
-                key="phone"
-                label="Phone Number"
-                value={profileData.phone}
-                onChange={(e) =>
-                  setProfileData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                editMode={editMode}
-                type="tel"
-              />
-
-              <ProfileField
-                key="location"
-                label="Location"
-                value={profileData.location}
-                onChange={(e) =>
-                  setProfileData((prev) => ({ ...prev, location: e.target.value }))
-                }
-                editMode={editMode}
-              />
-            </div>
-
-            {/* Inline action row for edit mode */}
-            {editMode && (
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8 p-3 sm:p-4 bg-gray-50 rounded-xl">
-                <button
-                  onClick={updateProfile}
-                  disabled={loading}
-                  className="bg-green-600 text-white px-4 sm:px-6 py-2.5 rounded-xl font-medium hover:bg-green-700 hover:shadow-lg transition-all duration-200 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  {loading ? (
-                    <Loader2 className="animate-spin" size={16} />
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      <span>Save Changes</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => setEditMode(false)}
-                  className="bg-gray-200 text-gray-800 px-4 sm:px-6 py-2.5 rounded-xl font-medium hover:bg-gray-300 transition-colors duration-200 inline-flex items-center justify-center gap-2"
-                >
-                  <X size={16} />
-                  <span>Cancel</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-  const PasswordModal = ({
-    passwordData,
-    setPasswordData,
-    changePassword,
-    loading,
-    setShowPasswordModal,
-  }) => (
-    <div className="fixed inset-0 bg-black/30 bg-opacity-20 flex items-center justify-center z-50 ">
-      <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-        <div className="text-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">
-            Change Password
-          </h3>
-          <p className="text-gray-600">Enter your current and new password</p>
-        </div>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            changePassword();
-          }}
-          className="space-y-4"
-        >
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Current Password
-            </label>
-            <input
-              type="password"
-              name="currentPassword"
-              value={passwordData.currentPassword}
-              onChange={(e) =>
-                setPasswordData({
-                  ...passwordData,
-                  currentPassword: e.target.value,
-                })
-              }
-              className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter current password"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              New Password
-            </label>
-            <input
-              type="password"
-              name="newPassword"
-              value={passwordData.newPassword}
-              onChange={(e) =>
-                setPasswordData({
-                  ...passwordData,
-                  newPassword: e.target.value,
-                })
-              }
-              className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter new password"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={passwordData.confirmPassword}
-              onChange={(e) =>
-                setPasswordData({
-                  ...passwordData,
-                  confirmPassword: e.target.value,
-                })
-              }
-              className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Confirm new password"
-              required
-            />
-          </div>
-
-          <div className="flex space-x-4 pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-blue-500 text-white py-3 rounded-xl font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center"
-            >
-              {loading ? (
-                <Loader2 className="animate-spin mr-2" size={16} />
-              ) : (
-                "Update Password"
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowPasswordModal(false)}
-              className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-300 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-
-  const ProfileField = ({ label, value, onChange, editMode, type = "text" }) => {
-  const [inputValue, setInputValue] = useState(value || "");
-
-  useEffect(() => {
-    setInputValue(value || "");
-  }, [value]);
-
-  const handleChange = (e) => {
-    setInputValue(e.target.value);
-    onChange(e);
-  };
-
-  return (
-    <div className="space-y-2">
-      <label className="block text-sm font-semibold text-gray-700">
-        {label}
-      </label>
-      {editMode ? (
-        <input
-          type={type}
-          value={inputValue}
-          onChange={handleChange}
-          className="w-full p-3 border-2 border-gray-200 rounded-xl 
-                     focus:ring-2 focus:ring-blue-500 focus:border-transparent 
-                     transition-all duration-200 hover:border-blue-300"
-          placeholder={`Enter your ${label.toLowerCase()}`}
-        />
-      ) : (
-        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-          <p className="font-medium text-gray-800">
-            {value || <span className="text-gray-400">Not provided</span>}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-
 
 const PlansPage = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -1501,8 +1008,15 @@ const PlansPage = () => {
 
   const renderPage = () => {
     switch (currentPage) {
-      case "profile":
-        return <ProfilePageComponent />;
+       case "profile":
+      return (
+        <ProfilePageComponent 
+          user={user} 
+          onProfileUpdate={(updatedUser) => {
+            setUser(updatedUser); // Update parent's user state
+          }}
+        />
+      );
       case "plans":
         return <PlansPage />;
       case "customized-plans":
