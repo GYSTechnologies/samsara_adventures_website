@@ -597,12 +597,10 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
                     className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50"
                   />
                 </div>
-                {!contactInfo.phone && (
-                  <p className="mt-1 text-xs text-red-600">Phone number is required</p>
+                {!contactInfo.phone || contactInfo.phone.length < 10 ||contactInfo.phone.length === 1 ||contactInfo.phone ===0 && (
+                  <p className="mt-1 text-xs text-red-600">Go to Profile and change the Phone number</p>
                 )}
-                {contactInfo.phone && contactInfo.phone.length < 10 && (
-                  <p className="mt-1 text-xs text-red-600">Phone number must be at least 10 digits</p>
-                )}
+               
               </div>
 
               {contactInfo.currentLocation && (
@@ -758,7 +756,7 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
         onNavigateHome={handleNavigateHome}
         onNavigateToPlans={handleNavigateToPlans}
         bookingId={bookingId}
-        isCustomRequest={true}
+        isCustomRequest={false}
       />
     </div>
   );

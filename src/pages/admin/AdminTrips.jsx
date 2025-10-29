@@ -23,7 +23,7 @@ export default function AdminTrips() {
   const [viewingTrip, setViewingTrip] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-
+  const [dropdownCategory, setDropdownCategory] = useState([]);
   const [enrollmentModal, setEnrollmentModal] = useState({
     show: false,
     tripId: null,
@@ -46,9 +46,18 @@ export default function AdminTrips() {
       setLoading(false);
     }
   };
-
+  const getDropdownCategory = async() => {
+    try {
+      const res = await axiosInstance.get("api/category/getCategoriesNames");
+      setDropdownCategory(res.data.categories);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch dropdown category");
+    }
+  }
   useEffect(() => {
     fetchTrips();
+    getDropdownCategory();
   }, []);
 
   // Toggle trip status (Active/Inactive)
@@ -269,6 +278,7 @@ export default function AdminTrips() {
                   refreshTrips={fetchTrips}
                   editTripData={editingTrip}
                   viewTripData={viewingTrip}
+                  categoryDropdown={dropdownCategory}
                 />
               )}
             </div>

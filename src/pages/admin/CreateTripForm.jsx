@@ -114,6 +114,7 @@ export default function CreateTripForm({
   refreshTrips,
   editTripData,
   viewTripData,
+  categoryDropdown,
   enquiryData,
   isCustomItinerary = false,
   isReadOnly = false,
@@ -123,7 +124,7 @@ export default function CreateTripForm({
     title: "",
     state: "",
     description: "",
-    category: "",
+    category: [],
     isSessional: false,
     overview: [""],
     inclusions: [""],
@@ -164,7 +165,7 @@ export default function CreateTripForm({
   const [imagePreviews, setImagePreviews] = useState([]);
   const [existingImagePreviews, setExistingImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
-
+ const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   // Initialize form data based on mode
   useEffect(() => {
     const initializeFormData = async () => {
@@ -201,7 +202,9 @@ export default function CreateTripForm({
             title: tripData.title || "",
             state: tripData.state || "",
             description: tripData.description || "",
-            category: tripData.category || "",
+            category: Array.isArray(tripData.category) 
+    ? tripData.category 
+    : (tripData.category ? [tripData.category] : []),
             isSessional: tripData.isSessional || false,
             overview:
               tripData.overview && tripData.overview.length > 0
@@ -514,6 +517,7 @@ export default function CreateTripForm({
               "inclusions",
               "exclusions",
               "activities",
+              "category",
               "tags",
               "itinerary",
             ].includes(key)
@@ -558,6 +562,27 @@ export default function CreateTripForm({
       );
     }
   };
+const handleCategoryToggle = (category) => {
+  
+  
+  setFormData((prev) => {
+    const currentCategories = prev.category || [];
+    const isSelected = currentCategories.includes(category);
+    
+    if (isSelected) {
+      // Remove category
+      const newCategories = currentCategories.filter(c => c !== category);
+      console.log('Removing category, new list:', newCategories);
+      return { ...prev, category: newCategories };
+    } else {
+      // Add category
+      const newCategories = [...currentCategories, category];
+      console.log('Adding category, new list:', newCategories);
+      return { ...prev, category: newCategories };
+    }
+  });
+};
+
   // Add this useEffect to auto-calculate grandTotal
   useEffect(() => {
     const calculateGrandTotal = () => {
@@ -709,22 +734,86 @@ export default function CreateTripForm({
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
-                  <input
-                    type="text"
-                    name="category"
-                    placeholder="Enter category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    disabled={isDisabled}
-                    className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                      isDisabled ? "bg-gray-100" : ""
-                    }`}
-                  />
-                </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Category (Multiple Selection)
+  </label>
+  <div className="relative">
+    <button
+      type="button"
+      onClick={() => !isDisabled && setCategoryDropdownOpen(!categoryDropdownOpen)}
+      disabled={isDisabled}
+      className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-left focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+        isDisabled ? "bg-gray-100 cursor-not-allowed" : "bg-white cursor-pointer hover:bg-gray-50"
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className={!formData.category || formData.category.length === 0 ? "text-gray-400" : "text-gray-900"}>
+          {!formData.category || formData.category.length === 0
+            ? "Select categories"
+            : formData.category.join(", ")}
+        </span>
+        <ChevronDown 
+          size={16} 
+          className={`transition-transform ${categoryDropdownOpen ? "rotate-180" : ""}`} 
+        />
+      </div>
+    </button>
+
+    {/* Dropdown with checkboxes */}
+    {categoryDropdownOpen && !isDisabled && (
+      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+        {categoryDropdown && categoryDropdown.length > 0 ? (
+          categoryDropdown.map((category) => {
+            // Get current selected categories
+            const selectedCategories = formData.category || [];
+            const isChecked = selectedCategories.includes(category);
+            
+            return (
+              <label
+                key={category}
+                className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => handleCategoryToggle(category)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
+                />
+                <span className="text-sm text-gray-700">{category}</span>
+              </label>
+            );
+          })
+        ) : (
+          <div className="px-3 py-2 text-sm text-gray-500">No categories available</div>
+        )}
+      </div>
+    )}
+  </div>
+
+  {/* Display selected categories as tags */}
+  {formData.category && formData.category.length > 0 && (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {formData.category.map((cat) => (
+        <span
+          key={cat}
+          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+        >
+          {cat}
+          {!isDisabled && (
+            <button
+              type="button"
+              onClick={() => handleCategoryToggle(cat)}
+              className="ml-1 inline-flex items-center justify-center w-4 h-4 text-blue-600 hover:bg-blue-200 hover:text-blue-900 rounded-full"
+            >
+              <X size={10} />
+            </button>
+          )}
+        </span>
+      ))}
+    </div>
+  )}
+</div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1197,70 +1286,7 @@ export default function CreateTripForm({
                 </div>
               )}
 
-              {/* New Image Upload */}
-              {/* {!isDisabled && (
-                <>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Upload New Images (Max 3)
-                  </label>
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                    <div className="space-y-1 text-center">
-                      <div className="flex text-sm text-gray-600">
-                        <label
-                          htmlFor="images"
-                          className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
-                        >
-                          <span>Upload images</span>
-                          <input
-                            id="images"
-                            name="images"
-                            type="file"
-                            multiple
-                            onChange={handleChange}
-                            className="sr-only"
-                            accept="image/*"
-                          />
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        PNG, JPG, GIF up to 10MB.{" "}
-                        {3 -
-                          (formData.images.length +
-                            formData.existingImages.length)}{" "}
-                        remaining
-                      </p>
-                    </div>
-                  </div>
-
-                  {imagePreviews.length > 0 && (
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        New Images
-                      </label>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {imagePreviews.map((preview, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={preview}
-                              alt={`Preview ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-md"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )} */}
-              {/* New Image Upload */}
+              
               {!isDisabled && (
                 <>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

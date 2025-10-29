@@ -80,7 +80,7 @@ const DestinationDetailPage = () => {
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
 
-  const { state } = useParams();
+  const { state, category } = useParams();
   const location = useLocation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -120,6 +120,7 @@ const DestinationDetailPage = () => {
       // Build effective params: URL first, then component overrides
       const params = {
         ...urlParams,
+        ...(category && category !== "all" ? { category } : {}),
         ...(state && state !== "all" ? { state } : {}),
         ...(user?.email ? { email: user.email } : {}),
       };
@@ -181,6 +182,7 @@ const DestinationDetailPage = () => {
   }, [
     urlParams.page,
     urlParams.limit,
+    urlParams.category,
     urlParams.state,
     urlParams.email,
     urlParams.isSessional,

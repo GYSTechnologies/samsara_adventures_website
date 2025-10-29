@@ -103,7 +103,7 @@ const CustomTripRequest = ({
   const [passengers, setPassengers] = useState([]);
   const [passengerErrors, setPassengerErrors] = useState([]);
 
-  // ADD THIS: Available seats state
+  // Available seats state
   const [availableSeats, setAvailableSeats] = useState(null);
 
   // Custom date (only start date)
@@ -159,7 +159,7 @@ const CustomTripRequest = ({
   const effectivePayment = customItineraryData?.payment || originalPayment;
   const effectiveItinerary = customItineraryData?.itinerary || originalItinerary;
 
-  // ADD THIS: Get available seats from tripDetails
+  // Get available seats from tripDetails
   useEffect(() => {
     if (tripDetails?.availableSeats !== undefined) {
       setAvailableSeats(tripDetails.availableSeats);
@@ -234,16 +234,20 @@ const CustomTripRequest = ({
     return errs.every((x) => !x.name && !x.age);
   };
 
+  // UPDATED: Validate custom date with 3 days minimum
   const validateCustomDate = () => {
     if (!customStartDate) {
       setDateError("Please select your preferred start date");
       return false;
     }
     const start = new Date(customStartDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (start < today) {
-      setDateError("Start date cannot be in the past");
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + 3); // 3 days from today
+    minDate.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    
+    if (start < minDate) {
+      setDateError("Start date must be at least 3 days from today");
       return false;
     }
     setDateError("");
@@ -540,8 +544,10 @@ const CustomTripRequest = ({
     }).format(new Date(d));
   };
 
-  const getTodayDate = () => {
+  // UPDATED: Get minimum date for custom booking (3 days from today)
+  const getMinCustomDate = () => {
     const today = new Date();
+    today.setDate(today.getDate() + 3); // Add 3 days
     return today.toISOString().split("T")[0];
   };
 
@@ -670,10 +676,10 @@ const CustomTripRequest = ({
               </div>
             </div>
 
-            {/* UPDATED: Travelers Counter with Available Seats Validation */}
+            {/* UPDATED: Travelers Counter - Only validate seats for scheduled batch */}
             <div className="border-t border-gray-100 px-4 py-3">
-              {/* Show available seats warning if seats are limited */}
-              {availableSeats !== null && availableSeats <= 10 && (
+              {/* Show available seats warning only for scheduled batch */}
+              {selectedBatch === "scheduled" && availableSeats !== null && availableSeats <= 10 && (
                 <div className="mb-3 bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start gap-2">
                   <Info className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-orange-700">
@@ -700,7 +706,8 @@ const CustomTripRequest = ({
                     <button
                       onClick={() => {
                         const newTotal = adultsCount + 1 + childrenCount;
-                        if (availableSeats !== null && newTotal > availableSeats) {
+                        // Only validate seats for scheduled batch, not for custom
+                        if (selectedBatch === "scheduled" && availableSeats !== null && newTotal > availableSeats) {
                           toast.error(`Only ${availableSeats} seats available for this trip!`);
                           return;
                         }
@@ -735,7 +742,8 @@ const CustomTripRequest = ({
                     <button
                       onClick={() => {
                         const newTotal = adultsCount + childrenCount + 1;
-                        if (availableSeats !== null && newTotal > availableSeats) {
+                        // Only validate seats for scheduled batch, not for custom
+                        if (selectedBatch === "scheduled" && availableSeats !== null && newTotal > availableSeats) {
                           toast.error(`Only ${availableSeats} seats available for this trip!`);
                           return;
                         }
@@ -753,7 +761,7 @@ const CustomTripRequest = ({
                   </div>
                 </div>
 
-                {/* Show total travelers count and remaining seats */}
+                {/* Show total travelers count */}
                 <div className="pt-2 border-t border-lime-100">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium text-lime-900">Total Travelers</span>
@@ -761,7 +769,7 @@ const CustomTripRequest = ({
                       {totalTravelers} {totalTravelers === 1 ? 'person' : 'people'}
                     </span>
                   </div>
-                  {availableSeats !== null && (
+                  {selectedBatch === "scheduled" && availableSeats !== null && (
                     <p className="text-xs text-gray-600 mt-1">
                       {Math.max(0, availableSeats - totalTravelers)} seats remaining
                     </p>
@@ -834,11 +842,12 @@ const CustomTripRequest = ({
                     className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm"
                   />
                   {user?.phoneNumber === 0 || user?.phoneNumber === undefined || !user?.phoneNumber ? (
-                    <p className="mt-1 text-xs text-red-600">Go to profile and add a phone number</p>
+                    <p className="mt-1 text-xs text-red-600">Go to Profile and change the Phone number</p>
                   ) : null}
                 </div>
               </div>
 
+              {/* UPDATED: Custom date input with 3-day minimum */}
               {!isPaymentFlow && (
                 <div>
                   <label className="block text-xs text-lime-700 mb-1.5 font-medium">Preferred Start Date *</label>
@@ -851,7 +860,7 @@ const CustomTripRequest = ({
                         setCustomStartDate(e.target.value);
                         setDateError("");
                       }}
-                      min={getTodayDate()}
+                      min={getMinCustomDate()} 
                       className={`w-full pl-10 pr-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500 ${
                         dateError ? "border-red-400 bg-red-50" : "border-gray-300"
                       }`}
@@ -859,7 +868,9 @@ const CustomTripRequest = ({
                     />
                   </div>
                   {dateError && <p className="mt-1 text-xs text-red-600">{dateError}</p>}
-                  <p className="mt-1 text-xs text-gray-500">We'll create a customized itinerary starting from this date</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Bookings must be made at least 3 days in advance
+                  </p>
                 </div>
               )}
 

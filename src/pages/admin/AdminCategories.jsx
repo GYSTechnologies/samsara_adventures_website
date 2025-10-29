@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Power, PowerOff, Loader2, FolderTree } from 'lucide-react';
+import { Plus, Trash2, Loader2, FolderTree, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axiosInstance from '../../api/axiosInstance';
 
@@ -107,7 +107,7 @@ const AdminCategories = () => {
         id,
         active: !currentStatus
       });
-      toast.success(`Category ${!currentStatus ? 'enabled' : 'disabled'} successfully`);
+      toast.success(`Category ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
       fetchCategories();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -181,70 +181,69 @@ const AdminCategories = () => {
                   <img
                     src={category.image}
                     alt={category.category}
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover transition-all duration-300 ${
+                      !category.active ? 'grayscale opacity-50' : ''
+                    }`}
                   />
-                  {/* Active Badge */}
-                  <div className="absolute top-3 right-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        category.active
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-gray-500 text-white'
-                      }`}
-                    >
-                      {category.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
+                  {/* Inactive Overlay */}
+                  {!category.active && (
+                    <div className="absolute inset-0 bg-gray-900/30 flex items-center justify-center">
+                      <X className="w-12 h-12 text-white opacity-80" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Category Info */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-3 truncate">
+                  <h3 className={`font-semibold text-lg mb-3 truncate ${
+                    category.active ? 'text-gray-900' : 'text-gray-400'
+                  }`}>
                     {category.category}
                   </h3>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-2">
-                    {/* Toggle Status Button */}
+                  {/* Toggle Switch */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-sm font-medium ${
+                      category.active ? 'text-emerald-700' : 'text-gray-500'
+                    }`}>
+                      {category.active ? 'Active' : 'Inactive'}
+                    </span>
+                    
                     <button
                       onClick={() => handleToggleStatus(category._id, category.active)}
                       disabled={actionLoading === `toggle-${category._id}`}
-                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        category.active
-                          ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                          : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                        category.active ? 'bg-emerald-600' : 'bg-gray-300'
                       }`}
-                      title={category.active ? 'Disable' : 'Enable'}
                     >
-                      {actionLoading === `toggle-${category._id}` ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : category.active ? (
-                        <>
-                          <PowerOff className="w-4 h-4" />
-                          <span className="hidden sm:inline">Disable</span>
-                        </>
-                      ) : (
-                        <>
-                          <Power className="w-4 h-4" />
-                          <span className="hidden sm:inline">Enable</span>
-                        </>
-                      )}
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                          category.active ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
                     </button>
-
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => handleDelete(category._id)}
-                      disabled={actionLoading === `delete-${category._id}`}
-                      className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      {actionLoading === `delete-${category._id}` ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </button>
+                    
+                    {actionLoading === `toggle-${category._id}` && (
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-2" />
+                    )}
                   </div>
+
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => handleDelete(category._id)}
+                    disabled={actionLoading === `delete-${category._id}`}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Delete Category"
+                  >
+                    {actionLoading === `delete-${category._id}` ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-sm font-medium">Delete</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             ))}
@@ -254,8 +253,8 @@ const AdminCategories = () => {
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto transform transition-all">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Add New Category</h2>
               <button
@@ -265,23 +264,21 @@ const AdminCategories = () => {
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
             <form onSubmit={handleCreate} className="space-y-5">
               {/* Category Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category Name *
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   placeholder="e.g., Beach, Mountains, Desert"
                   required
                 />
@@ -289,23 +286,47 @@ const AdminCategories = () => {
 
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category Image *
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category Image <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
-                  required
-                />
+                <div className="mt-1">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/50 transition-all">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Plus className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 font-medium">
+                        Click to upload image
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG up to 5MB
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      required
+                    />
+                  </label>
+                </div>
+                
                 {imagePreview && (
-                  <div className="mt-4">
+                  <div className="mt-4 relative">
                     <img
                       src={imagePreview}
                       alt="Preview"
                       className="w-full h-56 object-cover rounded-lg border-2 border-gray-200"
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setFormData(prev => ({ ...prev, image: null }));
+                      }}
+                      className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
               </div>
@@ -318,24 +339,24 @@ const AdminCategories = () => {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading === 'create'}
-                  className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
                 >
                   {actionLoading === 'create' ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Creating...
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Creating...</span>
                     </>
                   ) : (
                     <>
-                      <Plus className="w-4 h-4" />
-                      Create Category
+                      <Plus className="w-5 h-5" />
+                      <span>Create Category</span>
                     </>
                   )}
                 </button>
