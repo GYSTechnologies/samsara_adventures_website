@@ -756,7 +756,7 @@ const PackageBooking = ({ tripId, bookingData, tripDetails, user, navigate }) =>
         onNavigateHome={handleNavigateHome}
         onNavigateToPlans={handleNavigateToPlans}
         bookingId={bookingId}
-        isCustomRequest={true}
+        isCustomRequest={false}
       />
     </div>
   );

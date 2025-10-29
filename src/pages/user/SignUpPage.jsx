@@ -523,7 +523,7 @@ export default function SignupPage() {
               {/* Phone Input - IMPROVED */}
               <div className="group">
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Phone Number <span className="text-gray-400 text-xs">(Optional)</span>
+                  Phone Number
                 </label>
                 <div className="relative">
                   <input

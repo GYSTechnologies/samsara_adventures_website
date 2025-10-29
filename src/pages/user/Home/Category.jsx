@@ -23,7 +23,7 @@ function Category() {
       <div className="grid grid-cols-5 max-w-5xl gap-1 sm:gap-2 md:gap-4">
         {categories.map((category) => (
           <a 
-            href={`/destination?category${category.category}`} 
+            href={`/destination?category=${category.category}`} 
             key={category.id} 
             className="p-4 rounded-full flex flex-col items-center group"
           >
