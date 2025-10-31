@@ -1,13 +1,156 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Character Encoding & Viewport -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Samsara Adventures | Premium Travel Experiences & Vacation Packages</title>
+    <meta name="title" content="Samsara Adventures | Premium Travel Experiences & Vacation Packages" />
+    <meta name="description" content="Explore unforgettable travel experiences with Samsara Adventures. Discover premium vacation packages, tours, and adventures across India. Book your next trip today!" />
+    <meta name="keywords" content="travel experiences, vacation packages, tours, adventure travel, holiday packages, travel booking, explore India, travel deals" />
+    <meta name="author" content="Samsara Adventures" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.samsaraadventures.com/" />
+    
+    <!-- Open Graph Meta Tags (For Social Sharing) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.samsaraadventures.com/" />
+    <meta property="og:title" content="Samsara Adventures | Premium Travel Experiences & Vacation Packages" />
+    <meta property="og:description" content="Explore unforgettable travel experiences with Samsara Adventures. Discover premium vacation packages, tours, and adventures." />
+    <meta property="og:image" content="https://www.samsaraadventures.com/images/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Samsara Adventures" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://www.samsaraadventures.com/" />
+    <meta name="twitter:title" content="Samsara Adventures | Premium Travel Experiences" />
+    <meta name="twitter:description" content="Explore unforgettable travel experiences with Samsara Adventures. Premium vacation packages & adventures." />
+    <meta name="twitter:image" content="https://www.samsaraadventures.com/images/twitter-image.jpg" />
+    <meta name="twitter:creator" content="@samsaraadventures" />
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#10b981" />
+    <meta name="msapplication-TileColor" content="#10b981" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Preconnect to External Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- JSON-LD Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TravelAgency",
+      "name": "Samsara Adventures",
+      "description": "Premium travel experiences and vacation packages across India",
+      "url": "https://www.samsaraadventures.com",
+      "logo": "https://www.samsaraadventures.com/images/logo.png",
+      "image": "https://www.samsaraadventures.com/images/hero-image.jpg",
+      "telephone": "+91-XXXXXXXXXX",
+      "email": "contact@samsaraadventures.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Your Address",
+        "addressLocality": "Your City",
+        "addressRegion": "Your State",
+        "postalCode": "Your Pincode",
+        "addressCountry": "IN"
+      },
+      "sameAs": [
+        "https://www.facebook.com/samsaraadventures",
+        "https://www.instagram.com/samsaraadventures",
+        "https://twitter.com/samsaraadventures",
+        "https://www.youtube.com/c/samsaraadventures"
+      ],
+      "priceRange": "₹₹₹",
+      "areaServed": "IN",
+      "availableLanguage": "en",
+      "knowsAbout": [
+        "Travel Planning",
+        "Tour Packages",
+        "Adventure Tourism",
+        "Vacation Booking"
+      ]
+    }
+    </script>
+
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Samsara Adventures",
+      "url": "https://www.samsaraadventures.com",
+      "logo": "https://www.samsaraadventures.com/images/logo.png",
+      "description": "Premium travel experiences and vacation packages",
+      "foundingDate": "2024",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "Customer Support",
+        "telephone": "+91-XXXXXXXXXX",
+        "email": "samsaraadventuresoperational@gmail.com",
+        "availableLanguage": ["en", "hi"]
+      },
+      "sameAs": [
+        "https://www.facebook.com/samsaraadventures",
+        "https://www.instagram.com/samsaraadventures",
+        "https://twitter.com/samsaraadventures"
+      ]
+    }
+    </script>
+
+    <!-- Website Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Samsara Adventures",
+      "url": "https://www.samsaraadventures.com",
+      "description": "Premium travel experiences and vacation packages",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.samsaraadventures.com/search?q={search_term}",
+        "query-input": "required name=search_term"
+      }
+    }
+    </script>
+
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script>
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "XXXXXXXXXX");
+    </script>
   </body>
 </html>
