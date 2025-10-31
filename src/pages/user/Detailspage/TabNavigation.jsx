@@ -2,7 +2,7 @@ import React from "react";
 
 const TabNavigation = ({ activeTab, onTabChange, tabs }) => (
   <div className=" border-b border-gray-200 sticky top-0 z-10">
-    <div className="flex space-x-1 px-4">
+    <div className="flex space-x-1 ">
       {tabs.map((tab) => (
         <button
           key={tab.id}

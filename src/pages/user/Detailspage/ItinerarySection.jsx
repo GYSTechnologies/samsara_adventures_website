@@ -17,8 +17,8 @@ const Rail = ({ isFirst, isLast }) => (
 
 const ItinerarySection = ({ itinerary = [] }) => {
   return (
-    <div className="px-4 sm:px-6">
-      <div className="bg-white rounded-[18px] shadow-sm border border-gray-200 p-5 sm:p-6">
+    <div className=" pb-2 mb-20 ">
+      <div className="bg-white rounded-b-[18px] shadow-sm border border-gray-200 p-5 sm:p-6">
         <div className="space-y-6 sm:space-y-8">
           {itinerary.map((day, idx) => {
             // const isFirst = idx === 0;

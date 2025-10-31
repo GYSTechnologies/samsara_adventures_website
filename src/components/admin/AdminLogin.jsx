@@ -124,14 +124,14 @@ const AdminLogin = () => {
             </button>
 
             {/* Forgot Password Link */}
-            <div className="text-center pt-4 border-t border-gray-200">
+            {/* <div className="text-center pt-4 border-t border-gray-200">
               <Link
                 to="/forgot-password"
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
               >
                 Forgot your password?
               </Link>
-            </div>
+            </div> */}
           </form>
         </div>
 
